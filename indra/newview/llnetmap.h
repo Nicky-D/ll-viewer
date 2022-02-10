@@ -81,6 +81,7 @@ public:
 
 	void			setScale( F32 scale );
 	void			setToolTipMsg(const std::string& msg) { mToolTipMsg = msg; }
+    void			setParcelInfoMsg(const std::string& msg) { mParcelInfoMsg = msg; }
 	void			renderScaledPointGlobal( const LLVector3d& pos, const LLColor4U &color, F32 radius );
 
 private:
@@ -126,6 +127,7 @@ private:
 	LLUUID			mClosestAgentAtLastRightClick;
 
 	std::string		mToolTipMsg;
+	std::string		mParcelInfoMsg;
 
 public:
 	void			setSelected(uuid_vec_t uuids) { gmSelected=uuids; };

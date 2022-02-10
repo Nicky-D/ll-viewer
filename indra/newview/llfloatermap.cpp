@@ -86,6 +86,7 @@ BOOL LLFloaterMap::postBuild()
 	{
 		mMap->setToolTipMsg(getString("ToolTipMsg"));
 	}
+    mMap->setParcelInfoMsg(getString("ParcelInfoMsg"));
 	sendChildToBack(mMap);
 	
 	mTextBoxNorth = getChild<LLTextBox> ("floater_map_north");

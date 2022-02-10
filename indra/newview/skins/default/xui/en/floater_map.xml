@@ -16,12 +16,16 @@
  width="200">
     <floater.string
      name="ToolTipMsg">
-        [REGION](Double-click to open Map, shift-drag to pan)
+        [REGION][PARCEL_INFO_MSG](Double-click to open Map, shift-drag to pan)
     </floater.string>
 	<floater.string
      name="AltToolTipMsg">
-		[REGION](Double-click to teleport, shift-drag to pan)
+        [REGION][PARCEL_INFO_MSG](Double-click to teleport, shift-drag to pan)
 	</floater.string>
+    <floater.string
+     name="ParcelInfoMsg">
+        [PARCEL]Owner: [PARCEL_OWNER]
+    </floater.string>
 	<floater.string name="mini_map_caption">
 	Mini-map
     </floater.string>

@@ -1041,6 +1041,14 @@ void LLViewerRegion::renderPropertyLinesOnMinimap(F32 scale_pixels_per_meter, co
     }
 }
 
+void LLViewerRegion::renderBannedParcelsOnMinimap(F32 scale_pixels_per_meter, const F32 *banned_parcel_color)
+{
+    if (mParcelOverlay)
+    {
+        mParcelOverlay->renderBannedParcelsOnMinimap(scale_pixels_per_meter, banned_parcel_color);
+    }
+}
+
 
 // This gets called when the height field changes.
 void LLViewerRegion::dirtyHeights()

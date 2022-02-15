@@ -1861,6 +1861,18 @@ void LLViewerParcelMgr::processParcelProperties(LLMessageSystem *msg, void **use
 		parcel_mgr.resetSegments(parcel_mgr.mCollisionSegments);
 		parcel_mgr.writeSegmentsFromBitmap( bitmap, parcel_mgr.mCollisionSegments );
 
+        LLViewerRegion* agent_region = gAgent.getRegion();
+        if (agent_region)
+        {
+            LLViewerParcelOverlay* overlay = agent_region->mParcelOverlay;
+            if (overlay)
+            {
+                // *HACK: Don't reset collision parcels when receiving local data so we can "build history" of collision parcels. This causes false positives sometimes when parcel data is changing
+                //overlay->resetCollisionBitmap();
+                overlay->readCollisionBitmap(bitmap);
+            }
+        }
+
 		delete[] bitmap;
 		bitmap = NULL;
 

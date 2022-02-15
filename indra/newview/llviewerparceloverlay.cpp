@@ -91,6 +91,8 @@ LLViewerParcelOverlay::LLViewerParcelOverlay(LLViewerRegion* region, F32 region_
 		mOwnership[i] = PARCEL_PUBLIC;
 	}
 
+    resetCollisionBitmap();
+
 	gPipeline.markGLRebuild(this);
 }
 
@@ -850,6 +852,40 @@ void LLViewerParcelOverlay::updateGL()
 	updateOverlayTexture();
 }
 
+void LLViewerParcelOverlay::resetCollisionBitmap()
+{
+    mCollisionBitmap.clear();
+    mCollisionBitmap.resize(mParcelGridsPerEdge * mParcelGridsPerEdge, 0);
+}
+
+void LLViewerParcelOverlay::readCollisionBitmap(U8 *bitmap)
+{
+    S32       x;
+    S32       y;
+    const S32 STRIDE = mParcelGridsPerEdge;
+
+    for (y = 0; y < STRIDE; y++)
+    {
+        x = 0;
+        while (x < STRIDE)
+        {
+            U8 byte = bitmap[(x + y * STRIDE) / 8];
+
+            S32 bit;
+            for (bit = 0; bit < 8; bit++)
+            {
+                if (byte & (1 << bit))
+                {
+                    S32 out = x + y * STRIDE;
+
+                    mCollisionBitmap[out] = true;
+                }
+                x++;
+            }
+        }
+    }
+}
+
 void LLViewerParcelOverlay::idleUpdate(bool force_update)
 {
 	if (gGLManager.mIsDisabled)
@@ -1074,4 +1110,47 @@ void LLViewerParcelOverlay::renderPropertyLinesOnMinimap(F32 scale_pixels_per_me
             grid_2d_part_lines(left, top, right, bottom, has_left, has_bottom);
         }
     }
+}
+
+void LLViewerParcelOverlay::renderBannedParcelsOnMinimap(F32 scale_pixels_per_meter, const F32 *banned_parcel_color)
+{
+    if (!gSavedSettings.getBOOL("ShowBanLines"))
+    {
+        return;
+    }
+
+    LLVector3 origin_agent     = mRegion->getOriginAgent();
+    LLVector3 rel_region_pos   = origin_agent - gAgentCamera.getCameraPositionAgent();
+    F32       region_left      = rel_region_pos.mV[0] * scale_pixels_per_meter;
+    F32       region_bottom    = rel_region_pos.mV[1] * scale_pixels_per_meter;
+    F32       map_parcel_width = PARCEL_GRID_STEP_METERS * scale_pixels_per_meter;
+
+    gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
+    gGL.color4fv(banned_parcel_color);
+    const S32 STRIDE = mParcelGridsPerEdge;
+
+    gGL.begin(LLRender::QUADS);
+
+    for (S32 y = 0; y < STRIDE; y++)
+    {
+        for (S32 x = 0; x < STRIDE; x++)
+        {
+            // Consider using glBitmap
+            bool parcel_banned = mCollisionBitmap[x + (y) *STRIDE];
+            if (parcel_banned)
+            {
+                F32 left   = region_left + (x * map_parcel_width);
+                F32 bottom = region_bottom + (y * map_parcel_width);
+                F32 right  = left + map_parcel_width;
+                F32 top    = bottom + map_parcel_width;
+
+                gGL.vertex2f(left, top);
+                gGL.vertex2f(left, bottom);
+                gGL.vertex2f(right, bottom);
+                gGL.vertex2f(right, top);
+            }
+        }
+    }
+
+    gGL.end();
 }

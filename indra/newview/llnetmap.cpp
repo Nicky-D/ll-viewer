@@ -159,6 +159,7 @@ void LLNetMap::draw()
 	static LLUIColor map_frustum_color = LLUIColorTable::instance().getColor("MapFrustumColor", LLColor4::white);
 	static LLUIColor map_frustum_rotating_color = LLUIColorTable::instance().getColor("MapFrustumRotatingColor", LLColor4::white);
 	static LLUIColor map_parcel_outline_color = LLUIColorTable::instance().getColor("MapParcelOutlineColor", LLColor4::white);
+	static LLUIColor map_banned_parcel_color = LLUIColorTable::instance().getColor("MapBannedParcelColor", LLColor4(LLColor3(LLColor4::red), 0.5));
 	
 	if (mObjectImagep.isNull())
 	{
@@ -334,6 +335,7 @@ void LLNetMap::draw()
 			 iter != LLWorld::getInstance()->getRegionList().end(); ++iter)
 		{
 			LLViewerRegion* regionp = *iter;
+            regionp->renderBannedParcelsOnMinimap(scale_pixels_per_meter, map_banned_parcel_color.get().mV);
             regionp->renderPropertyLinesOnMinimap(scale_pixels_per_meter, map_parcel_outline_color.get().mV);
         }
 

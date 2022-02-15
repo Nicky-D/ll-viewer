@@ -70,6 +70,7 @@ public:
 	// Returns the number of vertices drawn
 	S32				renderPropertyLines();
     void			renderPropertyLinesOnMinimap(F32 scale_pixels_per_meter, const F32* parcel_outline_color);
+    void			renderBannedParcelsOnMinimap(F32 scale_pixels_per_meter, const F32* banned_parcel_color);
 
 	U8				ownership( const LLVector3& pos) const;
 	U8				parcelLineFlags( const LLVector3& pos) const;
@@ -84,6 +85,9 @@ public:
 	void	idleUpdate(bool update_now = false);
 	void	updateGL();
     
+    void    resetCollisionBitmap();
+    void    readCollisionBitmap(U8* bitmap);
+
 private:
 	// This is in parcel rows and columns, not grid rows and columns
 	// Stored in bottom three bits.
@@ -113,6 +117,11 @@ private:
 	// Each value is 0-3, PARCEL_AVAIL to PARCEL_SELF in the two low bits
 	// and other flags in the upper bits.
 	U8				*mOwnership;
+    // If the ban lines are enabled on the minimap, use these bits to draw them
+    // *NOTE: This data may be combined with mOwnership in the future. See
+    // uncompressLandOverlay. It is currently stored separately due the parcel
+    // data being sent to the client through different code paths.
+	std::vector<bool>			mCollisionBitmap;
 
 	// Update propery lines and overlay texture
 	BOOL			mDirty;

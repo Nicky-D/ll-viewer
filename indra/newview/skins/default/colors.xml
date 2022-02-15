@@ -517,6 +517,9 @@
      name="MapParcelOutlineColor"
      reference="White" />
     <color
+     name="MapBannedParcelColor"
+     value="1 0 0 0.5" />
+    <color
      name="MapFrustumRotatingColor"
      value="1 1 1 0.2" />
     <color

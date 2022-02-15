@@ -155,6 +155,7 @@ public:
 	// vertices drawn.
 	S32 renderPropertyLines();
     void renderPropertyLinesOnMinimap(F32 scale_pixels_per_meter, const F32* parcel_outline_color);
+    void renderBannedParcelsOnMinimap(F32 scale_pixels_per_meter, const F32* banned_parcel_color);
 
 
 	// Call this whenever you change the height data in the region.

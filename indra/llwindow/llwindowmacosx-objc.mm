@@ -242,7 +242,7 @@ CGLContextObj getCGLContextObj(GLViewRef view)
 	return [(LLOpenGLView *)view getCGLContextObj];
 }
 
-CGLPixelFormatObj* getCGLPixelFormatObj(NSWindowRef window)
+CGLPixelFormatObj getCGLPixelFormatObj(NSWindowRef window)
 {
 	LLOpenGLView *glview = [(LLNSWindow*)window contentView];
 	return [glview getCGLPixelFormatObj];

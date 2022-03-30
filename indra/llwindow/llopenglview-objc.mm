@@ -333,10 +333,10 @@ attributedStringInfo getSegments(NSAttributedString *str)
 	return (CGLContextObj)[ctx CGLContextObj];
 }
 
-- (CGLPixelFormatObj*)getCGLPixelFormatObj
+- (CGLPixelFormatObj)getCGLPixelFormatObj
 {
 	NSOpenGLPixelFormat *fmt = [self pixelFormat];
-	return (CGLPixelFormatObj*)[fmt	CGLPixelFormatObj];
+	return [fmt CGLPixelFormatObj];
 }
 
 // Various events can be intercepted by our view, thus not reaching our window.

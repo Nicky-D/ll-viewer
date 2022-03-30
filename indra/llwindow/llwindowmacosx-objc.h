@@ -128,6 +128,8 @@ void removeGLView(GLViewRef view);
 void makeFirstResponder(NSWindowRef window, GLViewRef view);
 void setupInputWindow(NSWindowRef window, GLViewRef view);
 
+CGLPixelFormatObj getCGLPixelFormatObj(NSWindowRef window);
+
 // These are all implemented in llwindowmacosx.cpp.
 // This is largely for easier interop between Obj-C and C++ (at least in the viewer's case due to the BOOL vs. BOOL conflict)
 bool callKeyUp(NSKeyEventRef event, unsigned short key, unsigned int mask);

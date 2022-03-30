@@ -63,7 +63,7 @@
 
 // These are mostly just for C++ <-> Obj-C interop.  We can manipulate the CGLContext from C++ without reprecussions.
 - (CGLContextObj) getCGLContextObj;
-- (CGLPixelFormatObj*)getCGLPixelFormatObj;
+- (CGLPixelFormatObj)getCGLPixelFormatObj;
 
 - (unsigned long) getVramSize;
 

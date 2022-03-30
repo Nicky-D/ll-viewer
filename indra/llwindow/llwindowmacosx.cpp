@@ -27,6 +27,7 @@
 #include "linden_common.h"
 
 #include "llwindowmacosx.h"
+#include "llwindowmacosx-objc.h"
 
 #include "llkeyboardmacosx.h"
 #include "llwindowcallbacks.h"
@@ -1220,6 +1221,49 @@ F32 LLWindowMacOSX::getPixelAspectRatio()
 {
 	//OS X always enforces a 1:1 pixel aspect ratio, regardless of video mode
 	return 1.f;
+}
+
+U32 LLWindowMacOSX::getAvailableVRAMMegabytes()
+{
+    // TODO - query CGLDescribeRenderer
+    // https://developer.apple.com/library/archive/qa/qa1168/_index.html
+    // http://web.archive.org/web/20140812200349/https://developer.apple.com/library/mac/documentation/GraphicsImaging/Reference/CGL_OpenGL/Reference/reference.html
+
+    // Get renderer info for all renderers that match the display mask.
+    // Use the current virtual screen index to interrogate the pixel format
+    // for its display mask and renderer id.
+    // Note, "pixelFormat" is the NSOpenGLPixelFormat that your OpenGL context
+    // is created from, typically created in your OpenGL view's -initWithFrame:
+    //[pixelFormat getValues:&displayMask forAttribute:NSOpenGLPFAScreenMask forVirtualScreen:virtualScreen];
+    //[pixelFormat getValues:&rendererID  forAttribute:NSOpenGLPFARendererID forVirtualScreen:virtualScreen];
+    CGLPixelFormatObj pixelFormat = getCGLPixelFormatObj(mWindow);
+    GLint virtualScreen = 0;
+    GLint displayMask = 0;
+    GLint rendererID = 0;
+    CGLGetVirtualScreen(mContext, &virtualScreen);
+    CGLDescribePixelFormat(pixelFormat, virtualScreen, kCGLPFADisplayMask, &displayMask);
+    CGLDescribePixelFormat(pixelFormat, virtualScreen, kCGLPFARendererID, &rendererID);
+
+    CGLRendererInfoObj rend;
+
+    GLint nrend = 0;
+    CGLQueryRendererInfo(displayMask, &rend, &nrend);
+    //auto rend_unique = std::make_unique(rend, CGLDestroyRendererInfo);
+    GLint videoMemory = 0;
+    for (GLint i = 0; i < nrend; i++)
+    {
+        GLint thisRendererID;
+        CGLDescribeRenderer(rend, i, kCGLRPRendererID, &thisRendererID);
+        // See if this is the one we want
+        if (thisRendererID == rendererID)
+        {
+            CGLDescribeRenderer(rend, i, kCGLRPVideoMemoryMegabytes, &videoMemory);
+        }
+    }
+
+    CGLDestroyRendererInfo(rend);
+
+    return (S32Megabytes) videoMemory;
 }
 
 //static SInt32 oldWindowLevel;

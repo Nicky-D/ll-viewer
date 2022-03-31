@@ -27,6 +27,7 @@
 
 #include <AppKit/AppKit.h>
 #include <Cocoa/Cocoa.h>
+#include <Metal/Metal.h>
 #include "llopenglview-objc.h"
 #include "llwindowmacosx-objc.h"
 #include "llappdelegate-objc.h"
@@ -471,4 +472,20 @@ long showAlert(std::string text, std::string title, int type)
 unsigned int getModifiers()
 {
 	return [NSEvent modifierFlags];
+}
+
+uint64_t getMtlAllocatedSize()
+{
+    uint64_t allocated = 0;
+
+    if (@available(macOS 10.13, *)) {
+        NSEnumerator<id<MTLDevice>> * devices = MTLCopyAllDevices().objectEnumerator;
+        while(id<MTLDevice> dev = devices.nextObject)
+        {
+            //LL_DEBUGS() << "device: " << dev.name.UTF8String << " allocated: " << dev.currentAllocatedSize << " recommended: " << dev.recommendedMaxWorkingSetSize << LL_ENDL;
+            allocated = std::max(allocated, uint64_t(dev.currentAllocatedSize));
+        }
+    }
+
+    return allocated;
 }

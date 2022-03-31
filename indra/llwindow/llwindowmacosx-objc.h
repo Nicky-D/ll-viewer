@@ -184,4 +184,6 @@ GLViewRef getGLView();
 
 unsigned int getModifiers();
 
+uint64_t getMtlAllocatedSize();
+
 #endif // LL_LLWINDOWMACOSX_OBJC_H

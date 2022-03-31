@@ -1225,17 +1225,17 @@ F32 LLWindowMacOSX::getPixelAspectRatio()
 
 U32 LLWindowMacOSX::getAvailableVRAMMegabytes()
 {
-    // TODO - query CGLDescribeRenderer
+    // based on apple's technical Q&A note QA1168
     // https://developer.apple.com/library/archive/qa/qa1168/_index.html
+
+    // see also CoreOpenGL reference which apple deleted:
     // http://web.archive.org/web/20140812200349/https://developer.apple.com/library/mac/documentation/GraphicsImaging/Reference/CGL_OpenGL/Reference/reference.html
 
     // Get renderer info for all renderers that match the display mask.
     // Use the current virtual screen index to interrogate the pixel format
     // for its display mask and renderer id.
-    // Note, "pixelFormat" is the NSOpenGLPixelFormat that your OpenGL context
+    // Note, "pixelFormat" is the CGLPixelFormat that your current OpenGL context
     // is created from, typically created in your OpenGL view's -initWithFrame:
-    //[pixelFormat getValues:&displayMask forAttribute:NSOpenGLPFAScreenMask forVirtualScreen:virtualScreen];
-    //[pixelFormat getValues:&rendererID  forAttribute:NSOpenGLPFARendererID forVirtualScreen:virtualScreen];
     CGLPixelFormatObj pixelFormat = getCGLPixelFormatObj(mWindow);
     GLint virtualScreen = 0;
     GLint displayMask = 0;
@@ -1245,10 +1245,9 @@ U32 LLWindowMacOSX::getAvailableVRAMMegabytes()
     CGLDescribePixelFormat(pixelFormat, virtualScreen, kCGLPFARendererID, &rendererID);
 
     CGLRendererInfoObj rend;
-
     GLint nrend = 0;
     CGLQueryRendererInfo(displayMask, &rend, &nrend);
-    //auto rend_unique = std::make_unique(rend, CGLDestroyRendererInfo);
+
     GLint videoMemory = 0;
     for (GLint i = 0; i < nrend; i++)
     {
@@ -1263,7 +1262,12 @@ U32 LLWindowMacOSX::getAvailableVRAMMegabytes()
 
     CGLDestroyRendererInfo(rend);
 
-    return (S32Megabytes) videoMemory;
+    U64Bytes allocated(getMtlAllocatedSize());
+
+    U64Bytes free((U64Megabytes)videoMemory);
+    free -= allocated;
+
+    return (U32Megabytes)free;
 }
 
 //static SInt32 oldWindowLevel;

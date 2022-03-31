@@ -28,7 +28,6 @@
 #define LLOpenGLView_H
 
 #import <Cocoa/Cocoa.h>
-#import <IOKit/IOKitLib.h>
 #import <CoreFoundation/CFBase.h>
 #import <CoreFoundation/CFNumber.h>
 #include <string>

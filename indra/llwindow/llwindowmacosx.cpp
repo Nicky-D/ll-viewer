@@ -1262,7 +1262,7 @@ U32 LLWindowMacOSX::getAvailableVRAMMegabytes()
 
     CGLDestroyRendererInfo(rend);
 
-    U64Bytes allocated(getMtlAllocatedSize());
+    U64Bytes allocated(getMtlAllocatedSize(mDisplay));
 
     U64Bytes free((U64Megabytes)videoMemory);
     free -= allocated;

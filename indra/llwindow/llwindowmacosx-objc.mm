@@ -474,17 +474,14 @@ unsigned int getModifiers()
 	return [NSEvent modifierFlags];
 }
 
-uint64_t getMtlAllocatedSize()
+uint64_t getMtlAllocatedSize(CGDirectDisplayID display)
 {
     uint64_t allocated = 0;
 
     if (@available(macOS 10.13, *)) {
-        NSEnumerator<id<MTLDevice>> * devices = MTLCopyAllDevices().objectEnumerator;
-        while(id<MTLDevice> dev = devices.nextObject)
-        {
-            //LL_DEBUGS() << "device: " << dev.name.UTF8String << " allocated: " << dev.currentAllocatedSize << " recommended: " << dev.recommendedMaxWorkingSetSize << LL_ENDL;
-            allocated = std::max(allocated, uint64_t(dev.currentAllocatedSize));
-        }
+        id<MTLDevice> dev = CGDirectDisplayCopyCurrentMetalDevice(display);
+        allocated = dev.currentAllocatedSize;
+        // LL_INFOS() << "display: " << display << " device: " << dev.name.UTF8String << " allocated: " << allocated << " recommended: " << dev.recommendedMaxWorkingSetSize << LL_ENDL;
     }
 
     return allocated;

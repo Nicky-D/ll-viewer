@@ -31,8 +31,9 @@
 #include <map>
 #include <vector>
 
-//fir CGSize
+//for CGSize / CGDirectDisplayID
 #include <CoreGraphics/CGGeometry.h>
+#include <CoreGraphics/CGDirectDisplay.h>
 
 typedef std::vector<std::pair<int, bool> > segment_t;
 
@@ -184,6 +185,6 @@ GLViewRef getGLView();
 
 unsigned int getModifiers();
 
-uint64_t getMtlAllocatedSize();
+uint64_t getMtlAllocatedSize(CGDirectDisplayID display);
 
 #endif // LL_LLWINDOWMACOSX_OBJC_H

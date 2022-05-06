@@ -2707,14 +2707,20 @@ LLSD LLPanelFace::renderMaterialToLLSD(LLUUID uuid, void* userdata)
     return sd;
 }
 
+
 // Take the individual texture settings from the material and apply to current face & TE
 void LLPanelFace::applyMaterialUUID(LLUUID uuid, void* userdata)
 {
     llassert(userdata != nullptr);
-    //LLPanelFace* instance = static_cast<LLPanelFace*>(userdata);
-    
+    LLPanelFace* instance = static_cast<LLPanelFace*>(userdata);
+
+    if (uuid.isNull()) { return; }
+
     LLFileSystem material_file(uuid, LLAssetType::AT_MATERIAL, LLFileSystem::READ);
     S32 bufsize = material_file.getSize();
+
+    if (bufsize <= 0) { return; }
+
     llassert(bufsize > 0);
     std::vector<U8> buffer(bufsize);
     material_file.read(&buffer[0], bufsize);
@@ -2731,19 +2737,32 @@ void LLPanelFace::applyMaterialUUID(LLUUID uuid, void* userdata)
     // wrong, oops. llassert(uuid == matSD.get("RenderMaterialUUID").asUUID());      // if not, whoo boy
 
     LLMaterialPtr mat = nullptr;
-    bool ident; // ?
-    LLSelectedTEMaterial::getCurrent(mat, ident);
+    bool out_ident; // ?
+    LLSelectedTEMaterial::getCurrent(mat, out_ident);
+    bool new_material = false;
+
+    if (!mat)
+    {
+        mat = instance->createDefaultMaterial(nullptr);
+        new_material = true;
+    }
 
     mat->setMaterialID(matSD.get("teMaterialID").asUUID());
 
-    mat->setNormalID(matSD.get("teNormalMap").asUUID());
+    LLUUID normal = matSD.get("teNormalMap").asUUID();
+    LL_INFOS() << "normal: " << normal << LL_ENDL;
+    mat->setNormalID(normal);
+
     mat->setNormalOffsetX(matSD.get("teNormalOffsetX").asReal());
     mat->setNormalOffsetY(matSD.get("teNormalOffsetY").asReal());
     mat->setNormalRepeatX(matSD.get("teNormalRepeatX").asReal());
     mat->setNormalRepeatY(matSD.get("teNormalRepeatY").asReal());
     mat->setNormalRotation(matSD.get("teNormalRotation").asReal());
 
-    mat->setSpecularID(matSD.get("teSpecularMap").asUUID());
+    LLUUID specular = matSD.get("teSpecularMap").asUUID();
+    LL_INFOS() << "specular: " << specular << LL_ENDL;
+    mat->setSpecularID(specular);
+
     LLColor4U color;
     color.mV[0] = static_cast<U8>(matSD.get("teSecularColorR").asInteger());
     color.mV[1] = static_cast<U8>(matSD.get("teSecularColorG").asInteger());
@@ -2761,6 +2780,46 @@ void LLPanelFace::applyMaterialUUID(LLUUID uuid, void* userdata)
     mat->setAlphaMaskCutoff(static_cast<U8>(matSD.get("teAlphaCutoff").asInteger()));
     mat->setEnvironmentIntensity(static_cast<U8>(matSD.get("teEnvIntensity").asInteger()));
     //mat->setShaderMask(static_cast<U32>(matSD.get(teShaderMask").asInteger());
+
+    if (new_material)
+    {
+        LLObjectSelectionHandle selection = LLSelectMgr::getInstance()->getSelection();
+
+        // Functor that aligns a face to mCenterFace
+        struct LLPanelFaceSetMaterialTEFunctor : public LLSelectedTEFunctor
+        {
+            LLPanelFace const * mPanel;
+            LLMaterialPtr mMat;
+
+            LLPanelFaceSetMaterialTEFunctor(LLPanelFace* panel, LLMaterialPtr mat) : mPanel(panel), mMat(mat) {}
+
+            bool apply(LLViewerObject* object, S32 te) override
+            {
+                LLFace* facep = object->mDrawable->getFace(te);
+                if (!facep)
+                {
+                    return true;
+                }
+
+                if (facep->getViewerObject()->getVolume()->getNumVolumeFaces() <= te)
+                {
+                    return true;
+                }
+
+                if (object->permModify())
+                {
+                    //LLMaterialPtr old_mat = object->getTE(te)->getMaterialParams();
+                    LL_INFOS() << "specular: " << mMat->getSpecularID() << " normal: " << mMat->getNormalID() << LL_ENDL;
+                    object->getTE(te)->setMaterialParams(mMat);
+                }
+                return true;
+            }
+        } func(instance, mat);
+
+        selection->applyToTEs(&func);
+        LLPanelFaceSendFunctor sendfunc;
+        LLSelectMgr::getInstance()->getSelection()->applyToObjects(&sendfunc);
+    }
 }
 
 

@@ -256,6 +256,19 @@ public:
 		}
 	};
 
+    struct CompareRenderOrder
+    {
+        bool operator()(const LLSpatialGroup* const& lhs, const LLSpatialGroup* const& rhs)
+        {
+            if (lhs->mAvatarp != rhs->mAvatarp)
+            {
+                return lhs->mAvatarp < rhs->mAvatarp;
+            }
+
+            return lhs->mRenderOrder > rhs->mRenderOrder;
+        }
+    };
+
 	typedef enum
 	{
 		GEOM_DIRTY				= LLViewerOctreeGroup::INVALID_STATE,
@@ -353,6 +366,10 @@ public:
 	
 	F32 mPixelArea;
 	F32 mRadius;
+
+    //used by LLVOAVatar to set render order in alpha draw pool to preserve legacy render order behavior
+    LLVOAvatar* mAvatarp = nullptr;
+    U32 mRenderOrder = 0; 
 
     // Reflection Probe associated with this node (if any)
     LLPointer<LLReflectionMap> mReflectionProbe = nullptr;

@@ -26,13 +26,21 @@
 
 /*[EXTRA_CODE_HERE]*/
 
+#if __VERSION__ < 130
+// fallback support for apple glsl 1.2
+#define uint int
+#endif
+
 #ifdef DEFINE_GL_FRAGCOLOR
 out vec4 frag_color;
 #else
 #define frag_color gl_FragColor
 #endif
 
+#ifdef GL_ARB_texture_cube_map_array
 uniform samplerCubeArray   reflectionProbes;
+#endif
+
 uniform int sourceIdx;
 
 VARYING vec3 vary_dir;
@@ -86,12 +94,16 @@ float random(vec2 co)
 vec2 hammersley2d(uint i, uint N) 
 {
 	// Radical inverse based on http://holger.dammertz.org/stuff/notes_HammersleyOnHemisphere.html
+	float rdi = 0.0;
+#if __VERSION__ >= 130
+	// TODO implement fallback for apple glsl 1.2
 	uint bits = (i << 16u) | (i >> 16u);
 	bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
 	bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
 	bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
 	bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
-	float rdi = float(bits) * 2.3283064365386963e-10;
+	rdi = float(bits) * 2.3283064365386963e-10;
+#endif
 	return vec2(float(i) /float(N), rdi);
 }
 
@@ -130,9 +142,9 @@ vec3 prefilterEnvMap(vec3 R, float roughness)
 	vec3 color = vec3(0.0);
 	float totalWeight = 0.0;
 	float envMapDim = 256.0;
-    int numSamples = 32/max(int(mipLevel), 1);
+	int numSamples = 32/int(max(mipLevel, 1));
 
-	for(uint i = 0u; i < numSamples; i++) {
+	for(uint i = 0; i < numSamples; i++) {
 		vec2 Xi = hammersley2d(i, numSamples);
 		vec3 H = importanceSample_GGX(Xi, roughness, N);
 		vec3 L = 2.0 * dot(V, H) * H - V;
@@ -151,7 +163,10 @@ vec3 prefilterEnvMap(vec3 R, float roughness)
 			float omegaP = 4.0 * PI / (6.0 * envMapDim * envMapDim);
 			// Biased (+1.0) mip level for better result
 			//float mipLevel = roughness == 0.0 ? 0.0 : max(0.5 * log2(omegaS / omegaP) + 1.0, 0.0f);
+#ifdef GL_ARB_texture_cube_map_array
+			// TODO implement fallback for apple missing cubemap array support
 			color += textureLod(reflectionProbes, vec4(L,sourceIdx), mipLevel).rgb * dotNL;
+#endif
 			totalWeight += dotNL;
 
 		}

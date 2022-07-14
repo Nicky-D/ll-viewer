@@ -26,6 +26,11 @@
 
 /*[EXTRA_CODE_HERE]*/
 
+#if __VERSION__ < 130
+// fallback support for apple glsl 1.2
+#define uint int
+#endif
+
 
 #ifdef DEFINE_GL_FRAGCOLOR
 out vec4 frag_color;
@@ -33,7 +38,10 @@ out vec4 frag_color;
 #define frag_color gl_FragColor
 #endif
 
+#ifdef GL_ARB_texture_cube_map_array
 uniform samplerCubeArray   reflectionProbes;
+#endif
+
 uniform int sourceIdx;
 
 VARYING vec3 vary_dir;
@@ -85,12 +93,15 @@ void main()
 	const float HALF_PI = PI * 0.5;
 
 	vec3 color = vec3(0.0);
-	uint sampleCount = 0u;
+	uint sampleCount = 0;
 	for (float phi = 0.0; phi < TWO_PI; phi += deltaPhi) {
 		for (float theta = 0.0; theta < HALF_PI; theta += deltaTheta) {
 			vec3 tempVec = cos(phi) * right + sin(phi) * up;
 			vec3 sampleVector = cos(theta) * N + sin(theta) * tempVec;
+#ifdef GL_ARB_texture_cube_map_array
+			// TODO implement fallback for apple missing cubemap array support
 			color += textureLod(reflectionProbes, vec4(sampleVector, sourceIdx), mipLevel).rgb * cos(theta) * sin(theta);
+#endif
 			sampleCount++;
 		}
 	}

@@ -1316,6 +1316,7 @@ class DarwinManifest(ViewerManifest):
                             for signee in plain_sign:
                                 self.run_command(
                                     ['codesign',
+                                     '-vvv',
                                      '--force',
                                      '--timestamp',
                                      '--keychain', viewer_keychain,

@@ -123,7 +123,7 @@ pre_build()
     SIGNING=()
     if [ "$arch" == "Darwin" -a "$variant" == "Release" ]
     then SIGNING=("-DENABLE_SIGNING:BOOL=YES" \
-                  "-DSIGNING_IDENTITY:STRING=Developer ID Application: Linden Research, Inc.")
+                  "-DSIGNING_IDENTITY:STRING=-")
     fi
 
     if [ "${RELEASE_CRASH_REPORTING:-}" != "OFF" ]

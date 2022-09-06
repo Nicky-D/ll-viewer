@@ -35,6 +35,7 @@
 #include "llviewerregion.h"
 #include "llinventoryobserver.h"
 #include "llviewercontrol.h"
+#include "llnotificationsutil.h"
 
 ///----------------------------------------------------------------------------
 /// Classes for AISv3 support.
@@ -474,6 +475,15 @@ void AISAPI::InvokeAISCommandCoro(LLCoreHttpUtil::HttpCoroutineAdapter::ptr_t ht
                 }
             }
         }
+        else if (status.getType() == 403) // possible oversized category response
+        {
+            if (body["oversize_inventory"].asBoolean() == true)
+            {
+                LL_WARNS("Inventory") << "Can't fetch the oversized inventory folder" << LL_ENDL;
+                LLNotificationsUtil::add("InventoryOversize");
+            }
+        }
+
         LL_WARNS("Inventory") << "Inventory error: " << status.toString() << LL_ENDL;
         LL_WARNS("Inventory") << ll_pretty_print_sd(result) << LL_ENDL;
     }

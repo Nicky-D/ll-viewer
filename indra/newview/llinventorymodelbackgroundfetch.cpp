@@ -41,6 +41,7 @@
 #include "bufferarray.h"
 #include "bufferstream.h"
 #include "llcorehttputil.h"
+#include "llnotificationsutil.h"
 
 // History (may be apocryphal)
 //
@@ -817,13 +818,26 @@ void BGFolderHttpHandler::processFailure(LLCore::HttpStatus status, LLCore::Http
 			fetcher->addRequestAtFront(folder_id, recursive, true);
 		}
 	}
-	else
-	{
-		if (fetcher->isBulkFetchProcessingComplete())
-		{
-			fetcher->setAllFoldersFetched();
-		}
-	}
+    else
+    {
+        LLSD body_llsd;
+        if (status == LLCore::HttpStatus(403)
+            && LLCoreHttpUtil::responseToLLSD(response, false, body_llsd)
+            && body_llsd["oversize_inventory"].asBoolean() == true
+            //&& body_llsd.has("oversize_categories")
+            )
+        {
+            LL_WARNS(LOG_INV) << "Can't fetch the oversized inventory folder" << LL_ENDL;
+            LLNotificationsUtil::add("InventoryOversize");
+
+            //stop fetching the inventory
+            fetcher->setAllFoldersFetched();
+        }
+        else if (fetcher->isBulkFetchProcessingComplete())
+        {
+            fetcher->setAllFoldersFetched();
+        }
+    }
 }
 
 

@@ -2419,10 +2419,13 @@ LLImageGLThread::LLImageGLThread(LLWindow* window)
     , mWindow(window)
 {
     LL_PROFILE_ZONE_SCOPED_CATEGORY_TEXTURE;
-    sEnabled = true;
+    mContext = mWindow->createSharedContext();
+	if( !mContext )
+		return;
+
+	sEnabled = true;
     mFinished = false;
 
-    mContext = mWindow->createSharedContext();
     ThreadPool::start();
 }
 

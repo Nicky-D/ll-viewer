@@ -74,7 +74,6 @@ LLKeyboardSDL::LLKeyboardSDL()
 	mTranslateKeyMap[SDLK_RIGHT] = KEY_RIGHT;
 	mTranslateKeyMap[SDLK_UP] = KEY_UP;
 	mTranslateKeyMap[SDLK_DOWN] = KEY_DOWN;
-	mTranslateKeyMap[SDLK_ESCAPE] = KEY_ESCAPE;
 	mTranslateKeyMap[SDLK_KP_ENTER] = KEY_RETURN;
 	mTranslateKeyMap[SDLK_ESCAPE] = KEY_ESCAPE;
 	mTranslateKeyMap[SDLK_BACKSPACE] = KEY_BACKSPACE;
@@ -124,8 +123,7 @@ LLKeyboardSDL::LLKeyboardSDL()
 	mTranslateKeyMap[SDLK_QUOTE] = '\'';
 
 	// Build inverse map
-	std::map<U16, KEY>::iterator iter;
-	for (iter = mTranslateKeyMap.begin(); iter != mTranslateKeyMap.end(); iter++)
+	for (auto iter = mTranslateKeyMap.begin(); iter != mTranslateKeyMap.end(); iter++)
 	{
 		mInvTranslateKeyMap[iter->second] = iter->first;
 	}
@@ -144,7 +142,7 @@ LLKeyboardSDL::LLKeyboardSDL()
 	mTranslateNumpadMap[SDLK_KP_PERIOD] = KEY_PAD_DEL;
 
 	// build inverse numpad map
-	for (iter = mTranslateNumpadMap.begin();
+	for (auto iter = mTranslateNumpadMap.begin();
 	     iter != mTranslateNumpadMap.end();
 	     iter++)
 	{

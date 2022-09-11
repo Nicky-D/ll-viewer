@@ -24,20 +24,20 @@
  * $/LicenseInfo$
  */
 
-#ifndef LL_LLWINDOWSDL_H
-#define LL_LLWINDOWSDL_H
+#ifndef LL_LLWINDOWSDL2_H
+#define LL_LLWINDOWSDL2_H
 
 // Simple Directmedia Layer (http://libsdl.org/) implementation of LLWindow class
 
 #include "llwindow.h"
 #include "lltimer.h"
 
-#include "SDL/SDL.h"
-#include "SDL/SDL_endian.h"
+#include "SDL2/SDL.h"
+#include "SDL2/SDL_endian.h"
 
 #if LL_X11
 // get X11-specific headers for use in low-level stuff like copy-and-paste support
-#include "SDL/SDL_syswm.h"
+#include "SDL2/SDL_syswm.h"
 #endif
 
 // AssertMacros.h does bad things.
@@ -123,6 +123,9 @@ public:
 	/*virtual*/ void bringToFront();
 
 	/*virtual*/ void spawnWebBrowser(const std::string& escaped_url, bool async);
+	/*virtual*/ void openFile(const std::string& file_name);
+
+        /*virtual*/ void setTitle(const std::string& title);
 	
 	static std::vector<std::string> getDynamicFallbackFontList();
 
@@ -145,11 +148,16 @@ public:
 	static Display* get_SDL_Display(void);
 #endif // LL_X11	
 
+	void* createSharedContext() override;
+	void makeContextCurrent(void* context) override;
+	void destroySharedContext(void* context) override;
+	void toggleVSync(bool enable_vsync) override;
+	
 protected:
 	LLWindowSDL(LLWindowCallbacks* callbacks,
 		const std::string& title, int x, int y, int width, int height, U32 flags,
 		BOOL fullscreen, BOOL clearBg, BOOL disable_vsync, BOOL use_gl,
-		BOOL ignore_pixel_depth, U32 fsaa_samples);
+		    BOOL ignore_pixel_depth, U32 fsaa_samples);
 	~LLWindowSDL();
 
 	/*virtual*/ BOOL	isValid();
@@ -177,7 +185,7 @@ protected:
 	void destroyContext();
 	void setupFailure(const std::string& text, const std::string& caption, U32 type);
 	void fixWindowSize(void);
-	U32 SDLCheckGrabbyKeys(SDLKey keysym, BOOL gain);
+	U32 SDLCheckGrabbyKeys(U32 keysym, BOOL gain);
 	BOOL SDLReallyCaptureInput(BOOL capture);
 
 	//
@@ -185,7 +193,12 @@ protected:
 	//
 	U32             mGrabbyKeyFlags;
 	int			mReallyCapturedCount;
-	SDL_Surface *	mWindow;
+
+	SDL_Window* mWindow;
+	SDL_Surface* mSurface;
+	SDL_GLContext mContext;
+	SDL_Cursor*	mSDLCursors[UI_CURSOR_COUNT];
+
 	std::string mWindowTitle;
 	double		mOriginalAspectRatio;
 	BOOL		mNeedsResize;		// Constructor figured out the window is too big, it needs a resize.
@@ -196,7 +209,6 @@ protected:
 
 	int		mSDLFlags;
 
-	SDL_Cursor*	mSDLCursors[UI_CURSOR_COUNT];
 	int             mHaveInputFocus; /* 0=no, 1=yes, else unknown */
 	int             mIsMinimized; /* 0=no, 1=yes, else unknown */
 
@@ -209,9 +221,28 @@ private:
 	LLTimer mFlashTimer;
 #endif //LL_X11
 	
-	U32 mKeyScanCode;
-        U32 mKeyVirtualKey;
-	SDLMod mKeyModifiers;
+    U32 mKeyVirtualKey;
+    U32 mKeyModifiers;
+    std::string mInputType;
+
+public:
+#if LL_X11
+    static Display* getSDLDisplay();
+    LLWString const& getPrimaryText() const { return mPrimaryClipboard; }
+    LLWString const& getSecondaryText() const { return mSecondaryClipboard; }
+    void clearPrimaryText()  { mPrimaryClipboard.clear(); }
+    void clearSecondaryText() { mSecondaryClipboard.clear(); }
+private:
+	void tryFindFullscreenSize( int &aWidth, int &aHeight );
+    void initialiseX11Clipboard();
+
+    bool getSelectionText(Atom selection, LLWString& text);
+    bool getSelectionText( Atom selection, Atom type, LLWString &text );
+
+    bool setSelectionText(Atom selection, const LLWString& text);
+#endif
+	LLWString mPrimaryClipboard;
+	LLWString mSecondaryClipboard;
 };
 
 

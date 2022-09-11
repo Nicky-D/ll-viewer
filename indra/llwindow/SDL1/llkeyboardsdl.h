@@ -24,8 +24,8 @@
  * $/LicenseInfo$
  */
 
-#ifndef LL_LLKEYBOARDSDL_H
-#define LL_LLKEYBOARDSDL_H
+#ifndef LL_LLKEYBOARDSDL1_H
+#define LL_LLKEYBOARDSDL1_H
 
 #include "llkeyboard.h"
 #include "SDL/SDL.h"

@@ -4,6 +4,9 @@ include(Variables)
 include(GLEXT)
 include(Prebuilt)
 
+include_guard()
+
+add_library( sdl INTERFACE IMPORTED )
 if (USESYSTEMLIBS)
   include(FindSDL)
 
@@ -15,16 +18,24 @@ if (USESYSTEMLIBS)
       )
 else (USESYSTEMLIBS)
   if (LINUX)
-    use_prebuilt_binary(SDL)
-    set (SDL_FOUND TRUE)
-    set (SDL_INCLUDE_DIR ${LIBS_PREBUILT_DIR}/i686-linux)
-    set (SDL_LIBRARY SDL directfb fusion direct X11)
+    if( NOT USE_SDL2 )
+      use_prebuilt_binary(SDL)
+      set (SDL_FOUND TRUE)
+	  
+      target_link_libraries (sdl INTERFACE SDL directfb fusion direct X11)
+	  target_compile_definitions( sdl INTERFACE LL_SDL=1 )
+
+    else()
+      use_prebuilt_binary(SDL2)
+      set (SDL2_FOUND TRUE)
+
+	  target_link_libraries( sdl INTERFACE SDL2 X11 )
+	  target_compile_definitions( sdl INTERFACE LL_SDL2=1 LL_SDL=1 )
+
+    endif()
+
   endif (LINUX)
 endif (USESYSTEMLIBS)
-
-if (SDL_FOUND)
-  include_directories(${SDL_INCLUDE_DIR})
-endif (SDL_FOUND)
 
 set(LLWINDOW_INCLUDE_DIRS
     ${GLEXT_INCLUDE_DIR}

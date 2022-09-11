@@ -67,7 +67,9 @@ add_subdirectory(${LIBS_OPEN_PREFIX}llui)
 add_subdirectory(${LIBS_OPEN_PREFIX}viewer_components)
 
 # Legacy C++ tests. Build always, run if LL_TESTS is true.
+if( LL_TESTS )
 add_subdirectory(${VIEWER_PREFIX}test)
+endif()
 
 if (ENABLE_MEDIA_PLUGINS)
 # viewer media plugins

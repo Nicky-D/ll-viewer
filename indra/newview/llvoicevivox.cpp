@@ -512,6 +512,15 @@ bool LLVivoxVoiceClient::writeString(const std::string &str)
 	return result;
 }
 
+bool viewerChoosesConnectionHandles()
+{
+#if LL_LINUX
+	return false;
+#else
+	return true;
+#endif
+}
+
 
 /////////////////////////////
 // session control messages
@@ -527,6 +536,12 @@ void LLVivoxVoiceClient::connectorCreate()
         vivoxLogLevel = "0";
     }
     LL_DEBUGS("Voice") << "creating connector with log level " << vivoxLogLevel << LL_ENDL;
+
+    // <FS:ND> Check if using the old SLVoice for Linux. the SDK in that version is too old to handle the extra args
+    std::string strConnectorHandle;
+    if( viewerChoosesConnectionHandles() )
+        strConnectorHandle = "<ConnectorHandle>" + LLVivoxSecurity::getInstance()->connectorHandle() + "</ConnectorHandle>";
+    // </FS:ND>
 	
 	stream 
 	<< "<Request requestId=\"" << mCommandCookie++ << "\" action=\"Connector.Create.1\">"
@@ -3573,29 +3588,41 @@ void LLVivoxVoiceClient::connectorCreateResponse(int statusCode, std::string &st
 
 	if(statusCode == 0)
 	{
-		// Connector created, move forward.
-        if (connectorHandle == LLVivoxSecurity::getInstance()->connectorHandle())
-        {
-            LL_INFOS("Voice") << "Voice connector succeeded, Vivox SDK version is " << versionID << " connector handle " << connectorHandle << LL_ENDL;
-            mVoiceVersion.serverVersion = versionID;
-            mConnectorEstablished = true;
-            mTerminateDaemon = false;
+		if( viewerChoosesConnectionHandles() )
+		{
+		
+			// Connector created, move forward.
+			if (connectorHandle == LLVivoxSecurity::getInstance()->connectorHandle())
+			{
+				LL_INFOS("Voice") << "Voice connector succeeded, Vivox SDK version is " << versionID << " connector handle " << connectorHandle << LL_ENDL;
+				mVoiceVersion.serverVersion = versionID;
+				mConnectorEstablished = true;
+				mTerminateDaemon = false;
 
-            result["connector"] = LLSD::Boolean(true);
-        }
-        else
-        {
-            // This shouldn't happen - we are somehow out of sync with SLVoice
-            // or possibly there are two things trying to run SLVoice at once
-            // or someone is trying to hack into it.
-            LL_WARNS("Voice") << "Connector returned wrong handle "
-                              << "(" << connectorHandle << ")"
-                              << " expected (" << LLVivoxSecurity::getInstance()->connectorHandle() << ")"
-                              << LL_ENDL;
-            result["connector"] = LLSD::Boolean(false);
-            // Give up.
-            mTerminateDaemon = true;
-        }
+				result["connecto	r"] = LLSD::Boolean(true);
+			}
+			else
+			{
+				// This shouldn't happen - we are somehow out of sync with SLVoice
+				// or possibly there are two things trying to run SLVoice at once
+				// or someone is trying to hack into it.
+				LL_WARNS("Voice") << "Connector 	returned wrong handle "
+								  << "(" << connectorHandle << ")"
+								  << " expected (" << LLVivoxSecurity::getInstance()->connectorHandle() << ")"
+								  << LL_ENDL;
+				result["connector"] = LLSD::Boolean(false);
+				// Give up.
+				mTerminateDaemon = true;
+			}
+		} else {
+			LL_INFOS("Voice") << "Connector.Create succeeded, Vivox SDK version is " << versionID << LL_ENDL;
+			mVoiceVersion.serverVersion = versionID;
+			LLVivoxSecurity::getInstance()->setConnectorHandle(connectorHandle);
+			mConnectorEstablished = true;
+			mTerminateDaemon = false;
+
+			result["connector"] = LLSD::Boolean(true);
+		}
 	}
     else if (statusCode == 10028) // web request timeout prior to login
     {
@@ -3645,6 +3672,12 @@ void LLVivoxVoiceClient::loginResponse(int statusCode, std::string &statusString
 	else
 	{
 		// Login succeeded, move forward.
+
+        // <FS:ND> Check if using the old SLVoice for Linux.
+        if( !viewerChoosesConnectionHandles() )
+            LLVivoxSecurity::getInstance()->setAccountHandle(accountHandle);
+        // </FS:ND>
+
 		mAccountLoggedIn = true;
 		mNumberOfAliases = numberOfAliases;
         result["login"] = LLSD::String("response_ok");

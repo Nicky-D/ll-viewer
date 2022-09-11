@@ -6,7 +6,9 @@
 #
 #   AUTOBUILD_EXECUTABLE - path to autobuild executable
 
-
+if( USE_SYSROOT )
+  return()
+endif()
 
 IF (NOT AUTOBUILD_EXECUTABLE)
 

@@ -157,6 +157,10 @@ BASE_ARGUMENTS=[
          default=None),
     dict(name='versionfile',
          description="""The name of a file containing the full version number."""),
+    dict(name='package_dir',
+         description="""Directory of prebuild packages""",
+         default=None
+         ),
     ]
 
 def usage(arguments, srctree=""):

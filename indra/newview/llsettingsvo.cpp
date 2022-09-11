@@ -694,8 +694,10 @@ void LLSettingsVOSky::applySpecial(void *ptarget, bool force)
 
         LLSettingsSky::ptr_t psky = LLEnvironment::instance().getCurrentSky();
 
-        LLVector4 sunDiffuse = LLVector4(psky->getSunlightColor().mV);
-        LLVector4 moonDiffuse = LLVector4(psky->getMoonlightColor().mV);
+		auto color{ psky->getSunlightColor() };
+        LLVector4 sunDiffuse = LLVector4(color.mV[0], color.mV[1], color.mV[2]);
+		color = psky->getMoonlightColor();
+        LLVector4 moonDiffuse = LLVector4(color.mV[0], color.mV[1], color.mV[2]);
 
         shader->uniform4fv(LLShaderMgr::SUNLIGHT_COLOR, sunDiffuse);
         shader->uniform4fv(LLShaderMgr::MOONLIGHT_COLOR, moonDiffuse);

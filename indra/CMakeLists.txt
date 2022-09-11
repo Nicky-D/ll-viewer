@@ -81,7 +81,7 @@ if (LINUX)
       include(LLAppearanceUtility)
       add_subdirectory(${LLAPPEARANCEUTILITY_SRC_DIR} ${LLAPPEARANCEUTILITY_BIN_DIR})
   endif (INSTALL_PROPRIETARY)
-  add_dependencies(viewer linux-crash-logger-strip-target)
+  #add_dependencies(viewer linux-crash-logger-strip-target)
 elseif (WINDOWS)
   # cmake EXISTS requires an absolute path, see indra/cmake/Variables.cmake
   if (EXISTS ${VIEWER_DIR}win_setup)
@@ -115,7 +115,12 @@ endif (USE_BUGSPLAT)
 add_subdirectory(${VIEWER_PREFIX}newview)
 add_dependencies(viewer secondlife-bin)
 
-add_subdirectory(${VIEWER_PREFIX}doxygen EXCLUDE_FROM_ALL)
+set_property(
+        DIRECTORY ${VIEWER_PREFIX}
+        PROPERTY VS_STARTUP_PROJECT ${VIEWER_BINARY_NAME}
+)
+
+#add_subdirectory(${VIEWER_PREFIX}doxygen EXCLUDE_FROM_ALL)
 
 if (LL_TESTS)
   # Define after the custom targets are created so

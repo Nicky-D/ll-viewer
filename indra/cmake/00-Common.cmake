@@ -120,7 +120,8 @@ if (LINUX)
 
   add_definitions(-D_FORTIFY_SOURCE=2)
 
-  set(CMAKE_CXX_FLAGS "-Wno-deprecated -Wno-unused-but-set-variable -Wno-unused-variable ${CMAKE_CXX_FLAGS}")
+  set(CMAKE_CXX_FLAGS "-Wno-deprecated -Wno-unused-but-set-variable -Wno-unused-variable -Wno-deprecated-declarations ${CMAKE_CXX_FLAGS}")
+  set(CMAKE_EXE_LINKER_FLAGS "-Wl,--no-keep-memory -Wl,--build-id -Wl,-rpath,'$ORIGIN:$ORIGIN/../lib' -Wl,--exclude-libs,ALL")
 
   # gcc 4.3 and above don't like the LL boost and also
   # cause warnings due to our use of deprecated headers
@@ -140,7 +141,7 @@ if (LINUX)
       )
 
   # force this platform to accept TOS via external browser
-  add_definitions(-DEXTERNAL_TOS)
+  #add_definitions(-DEXTERNAL_TOS)
 
   add_definitions(-DAPPID=secondlife)
   add_compile_options(-fvisibility=hidden)

@@ -62,7 +62,7 @@
       "cacheVariables": {
         "USE_SDL2": {
           "type": "BOOL",
-          "value": "OFF"
+          "value": "ON"
         },
         "USE_SYSROOT": {
           "type": "BOOL",

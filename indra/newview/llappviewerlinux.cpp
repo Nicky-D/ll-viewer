@@ -44,7 +44,6 @@
 #include <resolv.h>
 
 #if (__GLIBC__*1000 + __GLIBC_MINOR__) >= 2034
-#pragma message "Compiling with libresolv stubs"
 extern "C"
 {
   int __res_nquery(res_state statep,

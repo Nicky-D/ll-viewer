@@ -650,9 +650,14 @@ BOOL LLWindowSDL::createContext(int x, int y, int width, int height, int bits, B
 
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO ) < 0 )
     {
-        LL_INFOS() << "sdl_init() failed! " << SDL_GetError() << LL_ENDL;
-        setupFailure("sdl_init() failure,  window creation error", "error", OSMB_OK);
-        return false;
+        LL_INFOS() << "sdl_init(SDL_INIT_VIDEO | SDL_INIT_AUDIO ) failed!" << SDL_GetError() << LL_ENDL;
+        LL_INFOS() << "retying with sdl_init(SDL_INIT_VIDEO)." << LL_ENDL;
+        if (SDL_Init(SDL_INIT_VIDEO  ) < 0 )
+        {
+            LL_INFOS() << "SDL_Init() failed! " << SDL_GetError() << LL_ENDL;
+            setupFailure("SDL_Init() failure,  window creation error", "error", OSMB_OK);
+            return false;
+        }
     }
 
     SDL_version c_sdl_version;

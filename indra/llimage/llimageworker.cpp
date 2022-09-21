@@ -58,13 +58,40 @@ S32 LLImageDecodeThread::update(F32 max_time_ms)
 						     info.priority, info.discard, info.needs_aux,
 						     info.responder);
 
-		bool res = addRequest(req);
-		if (!res)
-		{
-			LL_ERRS() << "request added after LLLFSThread::cleanupClass()" << LL_ENDL;
-		}
+        std::shared_future< FutureResult > f = std::async( std::launch::async, []( ImageRequest *aReq ) -> FutureResult
+        {
+            FutureResult res;
+            res.mRequest = aReq;
+            res.mRequestResult = aReq->processRequest();
+            return res;
+        }, req);
+
+        mRequests.push_back(f);
+
+		//bool res = addRequest(req);
+		//if (!res)
+		//{
+		//	LL_ERRS() << "request added after LLLFSThread::cleanupClass()" << LL_ENDL;
+		//}
 	}
-	mCreationList.clear();
+    mCreationList.clear();
+
+    std::vector< std::shared_future<FutureResult> > vctNew;
+    vctNew.reserve(mRequests.size() / 3);
+
+    for( auto &f : mRequests )
+    {
+        auto ready = f.wait_for(std::chrono::microseconds(5));
+        if (ready == std::future_status::ready)
+        {
+            FutureResult res = f.get();
+            res.mRequest->finishRequest(res.mRequestResult);
+        }
+        else
+            vctNew.push_back(f);
+    }
+
+    std::swap(vctNew, mRequests);
 	S32 res = LLQueuedThread::update(max_time_ms);
 	return res;
 }

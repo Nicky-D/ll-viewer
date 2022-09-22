@@ -30,6 +30,8 @@
 #include "llimage.h"
 #include "llpointer.h"
 #include "llworkerthread.h"
+#include <future>
+
 
 class LLImageDecodeThread : public LLQueuedThread
 {
@@ -99,6 +101,14 @@ private:
 	typedef std::list<creation_info> creation_list_t;
 	creation_list_t mCreationList;
 	LLMutex* mCreationMutex;
+
+    struct FutureResult
+    {
+        ImageRequest  *mRequest = nullptr;
+        bool mRequestResult = false;
+    };
+
+    std::vector< std::shared_future< FutureResult > > mRequests;
 };
 
 #endif

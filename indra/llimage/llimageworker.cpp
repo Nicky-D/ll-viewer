@@ -44,27 +44,65 @@ LLImageDecodeThread::~LLImageDecodeThread()
 	delete mCreationMutex ;
 }
 
+
+#define MAX_THREADS 8
+
 // MAIN THREAD
 // virtual
 S32 LLImageDecodeThread::update(F32 max_time_ms)
 {
     LL_PROFILE_ZONE_SCOPED_CATEGORY_TEXTURE;
-	LLMutexLock lock(mCreationMutex);
-	for (creation_list_t::iterator iter = mCreationList.begin();
-		 iter != mCreationList.end(); ++iter)
-	{
-		creation_info& info = *iter;
-		ImageRequest* req = new ImageRequest(info.handle, info.image,
-						     info.priority, info.discard, info.needs_aux,
-						     info.responder);
 
-		bool res = addRequest(req);
-		if (!res)
-		{
-			LL_ERRS() << "request added after LLLFSThread::cleanupClass()" << LL_ENDL;
-		}
-	}
-	mCreationList.clear();
+    std::vector< std::shared_future<FutureResult> > vctNew;
+    vctNew.reserve(mRequests.size() / 3);
+
+    for( auto &f : mRequests )
+    {
+        auto ready = f.wait_for(std::chrono::microseconds(5));
+        if (ready == std::future_status::ready)
+        {
+            FutureResult res = f.get();
+            res.mRequest->finishRequest(res.mRequestResult);
+        }
+        else
+            vctNew.push_back(f);
+    }
+
+    std::swap(vctNew, mRequests);
+
+	LLMutexLock lock(mCreationMutex);
+
+    if( mRequests.size() < MAX_THREADS )
+    {
+        auto newCreationList = mCreationList;
+        mCreationList.clear();
+
+        for(auto info: newCreationList)
+        {
+            if(mRequests.size() < MAX_THREADS)
+            {
+                ImageRequest *req = new ImageRequest(info.handle, info.image, info.priority, info.discard,
+                                                     info.needs_aux, info.responder);
+
+                std::shared_future<FutureResult> f = std::async(std::launch::async,
+                                                                [](ImageRequest *aReq) -> FutureResult {
+                                                                    FutureResult res;
+                                                                    res.mRequest = aReq;
+                                                                    res.mRequestResult = aReq->processRequest();
+                                                                    return res;
+                                                                }, req);
+
+                mRequests.emplace_back(f);
+            } else
+                mCreationList.emplace_back(info);
+            //bool res = addRequest(req);
+            //if (!res)
+            //{
+            //	LL_ERRS() << "request added after LLLFSThread::cleanupClass()" << LL_ENDL;
+            //}
+        }
+    }
+
 	S32 res = LLQueuedThread::update(max_time_ms);
 	return res;
 }

@@ -28,6 +28,7 @@
 
 #include "llimageworker.h"
 #include "llimagedxt.h"
+#include "llsys.h"
 
 //----------------------------------------------------------------------------
 
@@ -44,8 +45,7 @@ LLImageDecodeThread::~LLImageDecodeThread()
 	delete mCreationMutex ;
 }
 
-
-#define MAX_THREADS 8
+constexpr uint8_t MAX_THREADS_FALLBACK = 4;
 
 // MAIN THREAD
 // virtual
@@ -54,6 +54,8 @@ S32 LLImageDecodeThread::update(F32 max_time_ms)
     LL_PROFILE_ZONE_SCOPED_CATEGORY_TEXTURE;
 
     std::vector< std::shared_future<FutureResult> > vctNew;
+
+    LLMutexLock lock(mCreationMutex);
     vctNew.reserve(mRequests.size() / 3);
 
     for( auto &f : mRequests )
@@ -70,16 +72,31 @@ S32 LLImageDecodeThread::update(F32 max_time_ms)
 
     std::swap(vctNew, mRequests);
 
-	LLMutexLock lock(mCreationMutex);
+    uint32_t numCPUS = gSysCPU.getNumCPUs();
+    uint32_t threadsToCreate = MAX_THREADS_FALLBACK;
 
-    if( mRequests.size() < MAX_THREADS )
+    if( numCPUS > 0 )
+    {
+        float fLoadAvg = gSysCPU.getLoadAvg();
+        float fTarget = 0.8; // 80% load
+        float fDiff = fTarget - fLoadAvg;
+        if(fDiff <= 0 )
+            threadsToCreate = 0;
+        else
+        {
+            fDiff *= numCPUS;
+            threadsToCreate = static_cast< uint32_t  >( fDiff );
+        }
+    }
+
+    if( mRequests.size() < threadsToCreate )
     {
         auto newCreationList = mCreationList;
         mCreationList.clear();
 
         for(auto info: newCreationList)
         {
-            if(mRequests.size() < MAX_THREADS)
+            if(mRequests.size() < threadsToCreate)
             {
                 ImageRequest *req = new ImageRequest(info.handle, info.image, info.priority, info.discard,
                                                      info.needs_aux, info.responder);

@@ -63,6 +63,8 @@ public:
 	std::string getCPUFamilyName() const;
 	std::string getCPUBrandName() const;
 	std::string getCPUFeatureDescription() const;
+
+    uint32_t getCPUs() const;
 private:
 	LLProcessorInfoImpl* mImpl;
 };

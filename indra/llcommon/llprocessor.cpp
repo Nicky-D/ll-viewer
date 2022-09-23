@@ -330,6 +330,11 @@ public:
 		return out.str(); 
 	}
 
+    virtual uint32_t getCPUs() const
+    { return 0; }
+
+    virtual float getLoadAvg() const
+    { return 0.0f; }
 protected:
 	void setInfo(cpu_info info_type, const LLSD& value) 
 	{
@@ -354,6 +359,8 @@ protected:
 	{ 
 		return mProcessorInfo["extension"].has(name);
 	}
+
+    uint32_t  mCPUs = 0;
 
 private:
 	void setInfo(const std::string& name, const LLSD& value) { mProcessorInfo["info"][name]=value; }
@@ -802,12 +809,15 @@ public:
 	{
 		get_proc_cpuinfo();
 	}
+    uint32_t getCPUs() const override
+    { return mCPUs; }
 
 	virtual ~LLProcessorInfoLinuxImpl() {}
 private:
 
 	void get_proc_cpuinfo()
 	{
+        mCPUs = 0;
 		std::map< std::string, std::string > cpuinfo;
 		LLFILE* cpuinfo_fp = LLFile::fopen(CPUINFO_FILE, "rb");
 		if(cpuinfo_fp)
@@ -835,6 +845,10 @@ private:
 				LLStringUtil::toLower(llinename);
 				std::string lineval( spacespot + 1, nlspot );
 				cpuinfo[ llinename ] = lineval;
+
+                if( linename == "processor")
+                    ++mCPUs;
+
 			}
 			fclose(cpuinfo_fp);
 		}
@@ -953,7 +967,8 @@ private:
 		}
 		return s.str();
 	}
-		
+
+    uint32_t mCPUs = 0;
 };
 
 
@@ -994,3 +1009,4 @@ std::string LLProcessorInfo::getCPUFamilyName() const { return mImpl->getCPUFami
 std::string LLProcessorInfo::getCPUBrandName() const { return mImpl->getCPUBrandName(); }
 std::string LLProcessorInfo::getCPUFeatureDescription() const { return mImpl->getCPUFeatureDescription(); }
 
+uint32_t  LLProcessorInfo::getCPUs() const { return mImpl->getCPUs(); }

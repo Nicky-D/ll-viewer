@@ -67,6 +67,9 @@ set(viewer_HEADER_FILES
 # Libraries on which this library depends, needed for Linux builds
 # Sort by high-level to low-level
 if (LINUX)
+  find_library( FONTCONFIG fontconfig REQUIRED )
+  find_library( FREETYPE freetype REQUIRED )
+  
   set(llwindow_LINK_LIBRARIES
       ${LLCOMMON_LIBRARIES}
       ${LLIMAGE_LIBRARIES}
@@ -76,8 +79,8 @@ if (LINUX)
       ${LLXML_LIBRARIES}
       ${UI_LIBRARIES}     # for GTK
       sdl
-      libfontconfig.a          # For FCInit and other FC* functions.
-      libfreetype.a
+      ${FONTCONFIG}
+      ${FREETYPE}
       libuuid.a
       )
 

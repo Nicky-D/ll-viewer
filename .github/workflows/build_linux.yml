@@ -4,6 +4,9 @@ jobs:
   build:
     runs-on: ubuntu-20.04
     steps:
+      - name: apt update
+        run: sudo apt update
+
       - name: Install required packages
         run: sudo apt install -y mesa-common-dev libgl1-mesa-dev libglu1-mesa-dev autoconf libtool  libxext-dev libgstreamer1.0-dev  gawk gtk-doc-tools  gettext gperf libibus-1.0-dev fcitx-libs-dev libudev-dev libxinerama-dev libxrandr-dev libpulse-dev
 

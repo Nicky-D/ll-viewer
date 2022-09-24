@@ -18,8 +18,7 @@ jobs:
       - name: Install ninja
         run: pip3 install ninja
 
-      # For the moment needed for viewer_manifest.py
-      - name: Install llbase
+      - name: Install llbase # For the moment needed for viewer_manifest.py
         run: pip3 install llbase
 
       - name: install autobuild

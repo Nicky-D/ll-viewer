@@ -645,18 +645,33 @@ BOOL LLWindowSDL::createContext(int x, int y, int width, int height, int bits, B
     mGrabbyKeyFlags = 0;
     mReallyCapturedCount = 0;
 
-    SDL_SetHint( SDL_HINT_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR, "0" );
-    SDL_SetHint(SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, "1");
+    std::initializer_list<std::tuple< char const*, char const * > > hintList =
+            {
+                    {SDL_HINT_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR,"0"},
+                    {SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH,"1"},
+            };
 
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO ) < 0 )
+    for( auto hint: hintList )
     {
-        LL_INFOS() << "sdl_init(SDL_INIT_VIDEO | SDL_INIT_AUDIO ) failed!" << SDL_GetError() << LL_ENDL;
-        LL_INFOS() << "retying with sdl_init(SDL_INIT_VIDEO)." << LL_ENDL;
-        if (SDL_Init(SDL_INIT_VIDEO  ) < 0 )
+        SDL_SetHint( std::get<0>(hint), std::get<1>(hint));
+    }
+
+    std::initializer_list<std::tuple<uint32_t, char const*, bool>> initList=
+            { {SDL_INIT_VIDEO,"SDL_INIT_VIDEO", true},
+              {SDL_INIT_AUDIO,"SDL_INIT_AUDIO", false},
+              {SDL_INIT_GAMECONTROLLER,"SDL_INIT_GAMECONTROLLER", false},
+              {SDL_INIT_SENSOR,"SDL_INIT_SENSOR", false}
+            };
+
+    for( auto subSystem : initList)
+    {
+        if( SDL_InitSubSystem( std::get<0>(subSystem) ) < 0 )
         {
-            LL_INFOS() << "SDL_Init() failed! " << SDL_GetError() << LL_ENDL;
-            setupFailure("SDL_Init() failure,  window creation error", "error", OSMB_OK);
-            return false;
+            LL_WARNS() << "SDL_InitSubSystem for " << std::get<1>(subSystem) << " failed " << SDL_GetError() << LL_ENDL;
+
+            if( std::get<2>(subSystem))
+                setupFailure("SDL_Init() failure", "error", OSMB_OK);
+
         }
     }
 

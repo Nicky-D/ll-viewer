@@ -116,16 +116,23 @@ endif (WINDOWS)
 
 
 if (LINUX)
-  set(CMAKE_SKIP_RPATH TRUE)
+  set( CMAKE_BUILD_WITH_INSTALL_RPATH TRUE )
+  set( CMAKE_INSTALL_RPATH $ORIGIN $ORIGIN/../lib )
+
+  find_program(CCACHE_EXE ccache)
+  if(CCACHE_EXE AND NOT DISABLE_CCACHE)
+    set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE_EXE} )
+    set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE_EXE} )
+  endif()
 
   add_definitions(-D_FORTIFY_SOURCE=2)
 
-  set(CMAKE_CXX_FLAGS "-Wno-deprecated -Wno-unused-but-set-variable -Wno-unused-variable -Wno-deprecated-declarations ${CMAKE_CXX_FLAGS}")
-  set(CMAKE_EXE_LINKER_FLAGS "-Wl,--no-keep-memory -Wl,--build-id -Wl,-rpath,'$ORIGIN:$ORIGIN/../lib' -Wl,--exclude-libs,ALL")
+  set(CMAKE_EXE_LINKER_FLAGS "-Wl,--exclude-libs,ALL")
 
-  # gcc 4.3 and above don't like the LL boost and also
-  # cause warnings due to our use of deprecated headers
-  add_definitions(-Wno-parentheses)
+  add_link_options(
+    -Wl,--no-keep-memory
+    -Wl,--build-id
+    )
 
   add_definitions(
       -D_REENTRANT
@@ -149,15 +156,10 @@ if (LINUX)
   # our 3rd party libs may need their *own* SIGCHLD handler to work. Sigh! The
   # viewer doesn't need to catch SIGCHLD anyway.
   add_definitions(-DLL_IGNORE_SIGCHLD)
-  if (ADDRESS_SIZE EQUAL 32)
-    add_compile_options(-march=pentium4)
-  endif (ADDRESS_SIZE EQUAL 32)
   #add_compile_options(-ftree-vectorize) # THIS CRASHES GCC 3.1-3.2
   if (NOT USESYSTEMLIBS)
     # this stops us requiring a really recent glibc at runtime
     add_compile_options(-fno-stack-protector)
-    # linking can be very memory-hungry, especially the final viewer link
-    set(CMAKE_CXX_LINK_FLAGS "-Wl,--no-keep-memory")
   endif (NOT USESYSTEMLIBS)
 
   set(CMAKE_CXX_FLAGS_DEBUG "-fno-inline ${CMAKE_CXX_FLAGS_DEBUG}")

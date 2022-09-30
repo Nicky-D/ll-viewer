@@ -5,7 +5,7 @@ include(FetchContent)
 # sets DOWNLOAD_EXTRACT_TIMESTAMP to FALSE, setting the timestamp of extracted files to time
 # of extraction rather than using the time that is recorded in the archive
 if( POLICY CMP0135)
-    cmake_policy(CMP0135 NEW)
+    cmake_policy(SET CMP0135 NEW)
 endif()
 
 if( USE_SYSROOT )

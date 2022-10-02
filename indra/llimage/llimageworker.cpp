@@ -89,6 +89,10 @@ S32 LLImageDecodeThread::update(F32 max_time_ms)
         }
     }
 
+    // Create at least 1
+    if( mRequests.empty() && threadsToCreate == 0 )
+        threadsToCreate = 1;
+
     if( mRequests.size() < threadsToCreate )
     {
         auto newCreationList = mCreationList;
@@ -102,12 +106,12 @@ S32 LLImageDecodeThread::update(F32 max_time_ms)
                                                      info.needs_aux, info.responder);
 
                 std::shared_future<FutureResult> f = std::async(std::launch::async,
-                                                                [](ImageRequest *aReq) -> FutureResult {
-                                                                    FutureResult res;
-                                                                    res.mRequest = aReq;
-                                                                    res.mRequestResult = aReq->processRequest();
-                                                                    return res;
-                                                                }, req);
+                    [](ImageRequest *aReq) -> FutureResult {
+                        FutureResult res;
+                        res.mRequest = aReq;
+                        res.mRequestResult = aReq->processRequest();
+                        return res;
+                    }, req);
 
                 mRequests.emplace_back(f);
             } else
@@ -120,8 +124,8 @@ S32 LLImageDecodeThread::update(F32 max_time_ms)
         }
     }
 
-	S32 res = LLQueuedThread::update(max_time_ms);
-	return res;
+    S32 res = LLQueuedThread::update(max_time_ms);
+    return res;
 }
 
 LLImageDecodeThread::handle_t LLImageDecodeThread::decodeImage(LLImageFormatted* image, 

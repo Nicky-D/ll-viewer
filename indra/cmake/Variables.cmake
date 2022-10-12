@@ -18,8 +18,7 @@ endif ()
 
 # Relative and absolute paths to subtrees.
 
-if(NOT DEFINED ${CMAKE_CURRENT_LIST_FILE}_INCLUDED)
-set(${CMAKE_CURRENT_LIST_FILE}_INCLUDED "YES")
+include_guard()
 
 if(NOT DEFINED COMMON_CMAKE_DIR)
     set(COMMON_CMAKE_DIR "${CMAKE_SOURCE_DIR}/cmake")
@@ -34,6 +33,7 @@ set(LL_TESTS ON CACHE BOOL "Build and run unit and integration tests (disable fo
 set(INCREMENTAL_LINK OFF CACHE BOOL "Use incremental linking on win32 builds (enable for faster links on some machines)")
 set(ENABLE_MEDIA_PLUGINS ON CACHE BOOL "Turn off building media plugins if they are imported by third-party library mechanism")
 set(VIEWER_SYMBOL_FILE "" CACHE STRING "Name of tarball into which to place symbol files")
+set(VIEWER_BINARY_NAME "secondlife-bin" CACHE STRING "Name of the generated binary file" )
 
 if(LIBS_CLOSED_DIR)
   file(TO_CMAKE_PATH "${LIBS_CLOSED_DIR}" LIBS_CLOSED_DIR)
@@ -50,7 +50,12 @@ set(LIBS_OPEN_DIR ${LIBS_COMMON_DIR})
 set(SCRIPTS_DIR ${CMAKE_SOURCE_DIR}/${SCRIPTS_PREFIX})
 set(VIEWER_DIR ${CMAKE_SOURCE_DIR}/${VIEWER_PREFIX})
 
-set(AUTOBUILD_INSTALL_DIR ${CMAKE_BINARY_DIR}/packages)
+if( USE_SYSROOT )
+  include(SysRoot)
+  set(AUTOBUILD_INSTALL_DIR ${CMAKE_BINARY_DIR}/_deps/${SYSROOT_NAME}-src/packages/)
+else()
+  set(AUTOBUILD_INSTALL_DIR ${CMAKE_BINARY_DIR}/packages)
+endif()
 
 set(LIBS_PREBUILT_DIR ${AUTOBUILD_INSTALL_DIR} CACHE PATH
     "Location of prebuilt libraries.")
@@ -106,7 +111,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-  set(LINUX ON BOOl FORCE)
+  set(LINUX ON BOOL FORCE)
 
   if (ADDRESS_SIZE EQUAL 32)
     set(DEB_ARCHITECTURE i386)
@@ -220,4 +225,3 @@ set(USE_PRECOMPILED_HEADERS ON CACHE BOOL "Enable use of precompiled header dire
 
 source_group("CMake Rules" FILES CMakeLists.txt)
 
-endif(NOT DEFINED ${CMAKE_CURRENT_LIST_FILE}_INCLUDED)

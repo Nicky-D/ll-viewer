@@ -19,7 +19,6 @@ set(cmake_SOURCE_FILES
     ConfigurePkgConfig.cmake
     CURL.cmake
     Copy3rdPartyLibs.cmake
-    DBusGlib.cmake
     DeploySharedLibs.cmake
     DragDrop.cmake
     EXPAT.cmake

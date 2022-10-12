@@ -73,22 +73,22 @@ if (LINUX)
       ${LLMATH_LIBRARIES}
       ${LLRENDER_LIBRARIES}
       ${LLFILESYSTEM_LIBRARIES}
-      ${LLWINDOW_LIBRARIES}
       ${LLXML_LIBRARIES}
       ${UI_LIBRARIES}     # for GTK
-      ${SDL_LIBRARY}
-      fontconfig          # For FCInit and other FC* functions.
+      sdl
+      libfontconfig.a          # For FCInit and other FC* functions.
+      libfreetype.a
+      libuuid.a
       )
 
-  list(APPEND viewer_SOURCE_FILES 
-       llkeyboardsdl.cpp 
-       llwindowsdl.cpp
-       )
-  list(APPEND viewer_HEADER_FILES
-       llkeyboardsdl.h
-       llwindowsdl.h
-       )
-
+	set( SDL_SOURCE_DIR SDL1 )
+	if(  USE_SDL2 )
+	  set (SDL_SOURCE_DIR SDL2 )
+	endif()
+	
+	list(APPEND viewer_SOURCE_FILES ${SDL_SOURCE_DIR}/llkeyboardsdl.cpp ${SDL_SOURCE_DIR}/llwindowsdl.cpp )
+	list(APPEND viewer_HEADER_FILES ${SDL_SOURCE_DIR}/llkeyboardsdl.h ${SDL_SOURCE_DIR}/llwindowsdl.h )
+  
   if (BUILD_HEADLESS)
     set(llwindowheadless_LINK_LIBRARIES
         ${LLCOMMON_LIBRARIES}
@@ -183,18 +183,16 @@ if (llwindow_HEADER_FILES)
   list(APPEND llwindow_SOURCE_FILES ${llwindow_HEADER_FILES})
 endif (llwindow_HEADER_FILES)
 
-  list(APPEND viewer_SOURCE_FILES ${viewer_HEADER_FILES})
+list(APPEND viewer_SOURCE_FILES ${viewer_HEADER_FILES})
 
-  add_library (llwindow
-    ${llwindow_SOURCE_FILES}
-    ${viewer_SOURCE_FILES}
-    )
+add_library (llwindow
+  ${llwindow_SOURCE_FILES}
+  ${viewer_SOURCE_FILES}
+  )
 
-if (SDL_FOUND)
-  set_property(TARGET llwindow
-    PROPERTY COMPILE_DEFINITIONS LL_SDL=1
-    )
-endif (SDL_FOUND)
+if( LINUX )
+  target_include_directories( llwindow PUBLIC ${SDL_SOURCE_DIR} )
+endif()
 
-  target_link_libraries (llwindow ${llwindow_LINK_LIBRARIES})
+target_link_libraries (llwindow ${llwindow_LINK_LIBRARIES})
 

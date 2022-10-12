@@ -4,7 +4,9 @@
 # other commands to guarantee full compatibility
 # with the version specified
 ## 3.8 added VS_DEBUGGER_WORKING_DIRECTORY support
-cmake_minimum_required(VERSION 3.8.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.21.0 FATAL_ERROR)
+
+set(CMAKE_CXX_STANDARD 14)
 
 set(ROOT_PROJECT_NAME "SecondLife" CACHE STRING
     "The root project/makefile/solution name. Defaults to SecondLife.")
@@ -34,7 +36,12 @@ add_subdirectory(${LIBS_OPEN_PREFIX}llcommon)
 add_subdirectory(${LIBS_OPEN_PREFIX}llcorehttp)
 add_subdirectory(${LIBS_OPEN_PREFIX}llimage)
 add_subdirectory(${LIBS_OPEN_PREFIX}llkdu)
-add_subdirectory(${LIBS_OPEN_PREFIX}llimagej2coj)
+if(USE_JASPER)
+    add_subdirectory(${LIBS_OPEN_PREFIX}llimagej2cjasper)
+else()
+    add_subdirectory(${LIBS_OPEN_PREFIX}llimagej2coj)
+endif()
+
 add_subdirectory(${LIBS_OPEN_PREFIX}llinventory)
 add_subdirectory(${LIBS_OPEN_PREFIX}llmath)
 add_subdirectory(${LIBS_OPEN_PREFIX}llmeshoptimizer)
@@ -60,7 +67,9 @@ add_subdirectory(${LIBS_OPEN_PREFIX}llui)
 add_subdirectory(${LIBS_OPEN_PREFIX}viewer_components)
 
 # Legacy C++ tests. Build always, run if LL_TESTS is true.
+if( LL_TESTS )
 add_subdirectory(${VIEWER_PREFIX}test)
+endif()
 
 if (ENABLE_MEDIA_PLUGINS)
 # viewer media plugins
@@ -72,7 +81,7 @@ if (LINUX)
       include(LLAppearanceUtility)
       add_subdirectory(${LLAPPEARANCEUTILITY_SRC_DIR} ${LLAPPEARANCEUTILITY_BIN_DIR})
   endif (INSTALL_PROPRIETARY)
-  add_dependencies(viewer linux-crash-logger-strip-target)
+  #add_dependencies(viewer linux-crash-logger-strip-target)
 elseif (WINDOWS)
   # cmake EXISTS requires an absolute path, see indra/cmake/Variables.cmake
   if (EXISTS ${VIEWER_DIR}win_setup)
@@ -106,7 +115,12 @@ endif (USE_BUGSPLAT)
 add_subdirectory(${VIEWER_PREFIX}newview)
 add_dependencies(viewer secondlife-bin)
 
-add_subdirectory(${VIEWER_PREFIX}doxygen EXCLUDE_FROM_ALL)
+set_property(
+        DIRECTORY ${VIEWER_PREFIX}
+        PROPERTY VS_STARTUP_PROJECT ${VIEWER_BINARY_NAME}
+)
+
+#add_subdirectory(${VIEWER_PREFIX}doxygen EXCLUDE_FROM_ALL)
 
 if (LL_TESTS)
   # Define after the custom targets are created so

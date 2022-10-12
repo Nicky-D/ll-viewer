@@ -43,9 +43,14 @@
 #if LL_GTK
 extern "C" {
 # include "gtk/gtk.h"
+#error "Direct use of GTK is deprecated"
 }
 #include <locale.h>
 #endif // LL_GTK
+
+#ifdef LL_GLIB
+#include <glib.h>
+#endif
 
 extern "C" {
 # include "fontconfig/fontconfig.h"
@@ -57,6 +62,7 @@ extern "C" {
 # include <unistd.h>
 # include <sys/types.h>
 # include <sys/wait.h>
+# include <stdio.h>
 #endif // LL_LINUX
 
 extern BOOL gDebugWindowProc;
@@ -119,7 +125,11 @@ bool LLWindowSDL::ll_try_gtk_init(void)
 	if (!tried_gtk_init)
 	{
 		tried_gtk_init = TRUE;
+
+#if ( !defined(GLIB_MAJOR_VERSION) && !defined(GLIB_MINOR_VERSION) ) || ( GLIB_MAJOR_VERSION < 2 ) || ( GLIB_MAJOR_VERSION == 2 && GLIB_MINOR_VERSION < 32 )
 		if (!g_thread_supported ()) g_thread_init (NULL);
+#endif
+
 		maybe_lock_display();
 		gtk_is_good = gtk_init_check(NULL, NULL);
 		maybe_unlock_display();
@@ -180,6 +190,247 @@ Display* LLWindowSDL::get_SDL_Display(void)
 	return NULL;
 }
 #endif // LL_X11
+
+#if LL_X11
+
+// Clipboard handing via native X11, base on the implementation in Cool VL by Henri Beauchamp
+
+namespace
+{
+    std::array<Atom, 3> gSupportedAtoms;
+
+    Atom XA_CLIPBOARD;
+    Atom XA_TARGETS;
+    Atom PVT_PASTE_BUFFER;
+    long const MAX_PASTE_BUFFER_SIZE = 16383;
+
+    void filterSelectionRequest( XEvent aEvent )
+    {
+        auto *display = LLWindowSDL::getSDLDisplay();
+        auto &request = aEvent.xselectionrequest;
+
+        XSelectionEvent reply { SelectionNotify, aEvent.xany.serial, aEvent.xany.send_event, display,
+                                request.requestor, request.selection, request.target,
+                                request.property,request.time };
+
+        if (request.target == XA_TARGETS)
+        {
+            XChangeProperty(display, request.requestor, request.property,
+                            XA_ATOM, 32, PropModeReplace,
+                            (unsigned char *) &gSupportedAtoms.front(), gSupportedAtoms.size());
+        }
+        else if (std::find(gSupportedAtoms.begin(), gSupportedAtoms.end(), request.target) !=
+                 gSupportedAtoms.end())
+        {
+            std::string utf8;
+            if (request.selection == XA_PRIMARY)
+                utf8 = wstring_to_utf8str(gWindowImplementation->getPrimaryText());
+            else
+                utf8 = wstring_to_utf8str(gWindowImplementation->getSecondaryText());
+
+            XChangeProperty(display, request.requestor, request.property,
+                            request.target, 8, PropModeReplace,
+                            (unsigned char *) utf8.c_str(), utf8.length());
+        }
+        else if (request.selection == XA_CLIPBOARD)
+        {
+            // Did not have what they wanted, so no property set
+            reply.property = None;
+        }
+        else
+            return;
+
+        XSendEvent(request.display, request.requestor, False, NoEventMask, (XEvent *) &reply);
+        XSync(display, False);
+    }
+
+    void filterSelectionClearRequest( XEvent aEvent )
+    {
+        auto &request = aEvent.xselectionrequest;
+        if (request.selection == XA_PRIMARY)
+            gWindowImplementation->clearPrimaryText();
+        else if (request.selection == XA_CLIPBOARD)
+            gWindowImplementation->clearSecondaryText();
+    }
+
+    int x11_clipboard_filter(const SDL_Event *evt)
+    {
+        Display *display = LLWindowSDL::getSDLDisplay();
+        if (!display)
+            return 1;
+
+        if (evt->type != SDL_SYSWMEVENT)
+            return 1;
+
+        auto xevent = evt->syswm.msg->event.xevent;
+
+        if (xevent.type == SelectionRequest)
+            filterSelectionRequest( xevent );
+        else if (xevent.type == SelectionClear)
+            filterSelectionClearRequest( xevent );
+        return 1;
+    }
+
+    bool grab_property(Display* display, Window window, Atom selection, Atom target)
+    {
+        if( !display )
+            return false;
+        
+        maybe_lock_display();
+
+        XDeleteProperty(display, window, PVT_PASTE_BUFFER);
+        XFlush(display);
+
+        XConvertSelection(display, selection, target, PVT_PASTE_BUFFER, window,  CurrentTime);
+
+        // Unlock the connection so that the SDL event loop may function
+        maybe_unlock_display();
+
+        const auto start{ SDL_GetTicks() };
+        const auto end{ start + 1000 };
+
+        XEvent xevent {};
+        bool response = false;
+
+        do
+        {
+            SDL_Event event {};
+
+            // Wait for an event
+            SDL_WaitEvent(&event);
+
+            // If the event is a window manager event
+            if (event.type == SDL_SYSWMEVENT)
+            {
+                xevent = event.syswm.msg->event.xevent;
+
+                if (xevent.type == SelectionNotify && xevent.xselection.requestor == window)
+                    response = true;
+            }
+        } while (!response && SDL_GetTicks() < end );
+
+        return response && xevent.xselection.property != None;
+    }
+}
+
+void LLWindowSDL::initialiseX11Clipboard()
+{
+	if (!mSDL_Display)
+        return;
+
+    SDL_EventState(SDL_SYSWMEVENT, SDL_ENABLE);
+    SDL_SetEventFilter(x11_clipboard_filter);
+
+    maybe_lock_display();
+
+    XA_CLIPBOARD = XInternAtom(mSDL_Display, "CLIPBOARD", False);
+
+    gSupportedAtoms[0] = XInternAtom(mSDL_Display, "UTF8_STRING", False);
+    gSupportedAtoms[1] = XInternAtom(mSDL_Display, "COMPOUND_TEXT", False);
+    gSupportedAtoms[2] = XA_STRING;
+
+    // TARGETS atom
+    XA_TARGETS = XInternAtom(mSDL_Display, "TARGETS", False);
+
+    // SL_PASTE_BUFFER atom
+    PVT_PASTE_BUFFER = XInternAtom(mSDL_Display, "FS_PASTE_BUFFER", False);
+
+    maybe_unlock_display();
+}
+
+bool LLWindowSDL::getSelectionText( Atom aSelection, Atom aType, LLWString &text )
+{
+    if( !mSDL_Display )
+        return false;
+    
+    if( !grab_property(mSDL_Display, mSDL_XWindowID, aSelection,aType ) )
+        return false;
+
+    maybe_lock_display();
+
+    Atom type;
+    int format{};
+    unsigned long len{},remaining {};
+    unsigned char* data = nullptr;
+    int res = XGetWindowProperty(mSDL_Display, mSDL_XWindowID,
+                                 PVT_PASTE_BUFFER, 0, MAX_PASTE_BUFFER_SIZE, False,
+                                 AnyPropertyType, &type, &format, &len,
+                                 &remaining, &data);
+    if (data && len)
+    {
+		text = LLWString(
+                utf8str_to_wstring(reinterpret_cast< char const *>( data ) )
+                );
+        XFree(data);
+    }
+
+    maybe_unlock_display();
+    return res == Success;
+}
+
+bool LLWindowSDL::getSelectionText(Atom selection, LLWString& text)
+{
+	if (!mSDL_Display)
+        return false;
+
+	maybe_lock_display();
+
+	Window owner = XGetSelectionOwner(mSDL_Display, selection);
+	if (owner == None)
+	{
+		if (selection == XA_PRIMARY)
+		{
+			owner = DefaultRootWindow(mSDL_Display);
+			selection = XA_CUT_BUFFER0;
+		}
+		else
+		{
+			maybe_unlock_display();
+			return false;
+		}
+	}
+
+	maybe_unlock_display();
+
+    for( Atom atom : gSupportedAtoms )
+    {
+        if(getSelectionText(selection, atom, text ) )
+            return true;
+    }
+
+    return false;
+}
+
+bool LLWindowSDL::setSelectionText(Atom selection, const LLWString& text)
+{
+    maybe_lock_display();
+
+    if (selection == XA_PRIMARY)
+    {
+        std::string utf8 = wstring_to_utf8str(text);
+        XStoreBytes(mSDL_Display, utf8.c_str(), utf8.length() + 1);
+        mPrimaryClipboard = text;
+    }
+    else
+        mSecondaryClipboard = text;
+
+    XSetSelectionOwner(mSDL_Display, selection, mSDL_XWindowID, CurrentTime);
+
+    auto owner = XGetSelectionOwner(mSDL_Display, selection);
+
+    maybe_unlock_display();
+
+    return owner == mSDL_XWindowID;
+}
+
+Display* LLWindowSDL::getSDLDisplay()
+{
+	if (gWindowImplementation)
+		return gWindowImplementation->mSDL_Display;
+	return nullptr;
+}
+
+#endif
 
 
 LLWindowSDL::LLWindowSDL(LLWindowCallbacks* callbacks,
@@ -244,6 +495,7 @@ LLWindowSDL::LLWindowSDL(LLWindowCallbacks* callbacks,
 
 #if LL_X11
 	mFlashing = FALSE;
+	initialiseX11Clipboard();
 #endif // LL_X11
 
 	mKeyScanCode = 0;
@@ -406,6 +658,11 @@ static int x11_detect_VRAM_kb()
 }
 #endif // LL_X11
 
+void LLWindowSDL::setTitle(const std::string &title)
+{
+	SDL_WM_SetCaption(title.c_str(), title.c_str());
+}
+
 BOOL LLWindowSDL::createContext(int x, int y, int width, int height, int bits, BOOL fullscreen, BOOL disable_vsync)
 {
 	//bool			glneedsinit = false;
@@ -448,6 +705,7 @@ BOOL LLWindowSDL::createContext(int x, int y, int width, int height, int bits, B
 	if (video_info->current_h > 0)
 	{
 		mOriginalAspectRatio = (float)video_info->current_w / (float)video_info->current_h;
+
 		LL_INFOS() << "Original aspect ratio was " << video_info->current_w << ":" << video_info->current_h << "=" << mOriginalAspectRatio << LL_ENDL;
 	}
 
@@ -662,7 +920,7 @@ BOOL LLWindowSDL::createContext(int x, int y, int width, int height, int bits, B
 	{
 		close();
 		setupFailure(
-			"Second Life requires True Color (32-bit) to run in a window.\n"
+			"Fractal Viewer requires True Color (32-bit) to run in a window.\n"
 			"Please go to Control Panels -> Display -> Settings and\n"
 			"set the screen to 32-bit color.\n"
 			"Alternately, if you choose to run fullscreen, Second Life\n"
@@ -677,7 +935,7 @@ BOOL LLWindowSDL::createContext(int x, int y, int width, int height, int bits, B
 	{
 		close();
 		setupFailure(
-			"Second Life is unable to run because it can't get an 8 bit alpha\n"
+			"Fractal Viewer is unable to run because it can't get an 8 bit alpha\n"
 			"channel.  Usually this is due to video card driver issues.\n"
 			"Please make sure you have the latest video card drivers installed.\n"
 			"Also be sure your monitor is set to True Color (32-bit) in\n"
@@ -1224,20 +1482,23 @@ void LLWindowSDL::x11_set_urgent(BOOL urgent)
 
 void LLWindowSDL::flashIcon(F32 seconds)
 {
+	if (getMinimized())
+	{
 #if !LL_X11
-	LL_INFOS() << "Stub LLWindowSDL::flashIcon(" << seconds << ")" << LL_ENDL;
+		LL_INFOS() << "Stub LLWindowSDL::flashIcon(" << seconds << ")" << LL_ENDL;
 #else	
-	LL_INFOS() << "X11 LLWindowSDL::flashIcon(" << seconds << ")" << LL_ENDL;
+		LL_INFOS() << "X11 LLWindowSDL::flashIcon(" << seconds << ")" << LL_ENDL;
 	
-	F32 remaining_time = mFlashTimer.getRemainingTimeF32();
-	if (remaining_time < seconds)
-		remaining_time = seconds;
-	mFlashTimer.reset();
-	mFlashTimer.setTimerExpirySec(remaining_time);
+		F32 remaining_time = mFlashTimer.getRemainingTimeF32();
+		if (remaining_time < seconds)
+			remaining_time = seconds;
+		mFlashTimer.reset();
+		mFlashTimer.setTimerExpirySec(remaining_time);
 
-	x11_set_urgent(TRUE);
-	mFlashing = TRUE;
+		x11_set_urgent(TRUE);
+		mFlashing = TRUE;
 #endif // LL_X11
+	}
 }
 
 
@@ -1330,33 +1591,34 @@ BOOL LLWindowSDL::copyTextToPrimary(const LLWString &text)
 #else
 
 BOOL LLWindowSDL::isClipboardTextAvailable()
-{
-	return FALSE; // unsupported
+{	
+	return mSDL_Display && XGetSelectionOwner(mSDL_Display, XA_CLIPBOARD) != None;
 }
 
 BOOL LLWindowSDL::pasteTextFromClipboard(LLWString &dst)
 {
-	return FALSE; // unsupported
+	return getSelectionText(XA_CLIPBOARD, dst);
 }
 
 BOOL LLWindowSDL::copyTextToClipboard(const LLWString &s)
 {
-	return FALSE;  // unsupported
+	return setSelectionText(XA_CLIPBOARD, s);
 }
 
 BOOL LLWindowSDL::isPrimaryTextAvailable()
 {
-	return FALSE; // unsupported
+   	LLWString text;
+	return getSelectionText(XA_PRIMARY, text) && !text.empty();
 }
 
 BOOL LLWindowSDL::pasteTextFromPrimary(LLWString &dst)
 {
-	return FALSE; // unsupported
+	return getSelectionText(XA_PRIMARY, dst);
 }
 
 BOOL LLWindowSDL::copyTextToPrimary(const LLWString &s)
 {
-	return FALSE;  // unsupported
+	return setSelectionText(XA_PRIMARY, s);
 }
 
 #endif // LL_GTK
@@ -1409,10 +1671,10 @@ BOOL LLWindowSDL::convertCoords(LLCoordGL from, LLCoordWindow *to)
     if (!to)
         return FALSE;
 
-	to->mX = from.mX;
-	to->mY = mWindow->h - from.mY - 1;
+    to->mX = from.mX;
+    to->mY = mWindow->h - from.mY - 1;
 
-	return TRUE;
+    return TRUE;
 }
 
 BOOL LLWindowSDL::convertCoords(LLCoordWindow from, LLCoordGL* to)
@@ -1420,31 +1682,31 @@ BOOL LLWindowSDL::convertCoords(LLCoordWindow from, LLCoordGL* to)
     if (!to)
         return FALSE;
 
-	to->mX = from.mX;
-	to->mY = mWindow->h - from.mY - 1;
+    to->mX = from.mX;
+    to->mY = mWindow->h - from.mY - 1;
 
-	return TRUE;
+    return TRUE;
 }
 
 BOOL LLWindowSDL::convertCoords(LLCoordScreen from, LLCoordWindow* to)
 {
     if (!to)
-		return FALSE;
+        return FALSE;
 
-	// In the fullscreen case, window and screen coordinates are the same.
-	to->mX = from.mX;
-	to->mY = from.mY;
+    // In the fullscreen case, window and screen coordinates are the same.
+    to->mX = from.mX;
+    to->mY = from.mY;
     return (TRUE);
 }
 
 BOOL LLWindowSDL::convertCoords(LLCoordWindow from, LLCoordScreen *to)
 {
     if (!to)
-		return FALSE;
+        return FALSE;
 
-	// In the fullscreen case, window and screen coordinates are the same.
-	to->mX = from.mX;
-	to->mY = from.mY;
+    // In the fullscreen case, window and screen coordinates are the same.
+    to->mX = from.mX;
+    to->mY = from.mY;
     return (TRUE);
 }
 
@@ -1721,7 +1983,18 @@ void LLWindowSDL::processMiscNativeEvents()
 	    setlocale(LC_ALL, saved_locale.c_str() );
     }
 #endif // LL_GTK
-
+#if LL_GLIB
+	// Pump until we've nothing left to do or passed 1/15th of a
+	// second pumping for this frame.
+	static LLTimer pump_timer;
+	pump_timer.reset();
+	pump_timer.setTimerExpirySec(1.0f / 15.0f);
+	do
+	{
+		g_main_context_iteration(g_main_context_default(), FALSE);
+	} while( g_main_context_pending(g_main_context_default()) && !pump_timer.hasExpired());
+#endif
+	
     // hack - doesn't belong here - but this is just for debugging
     if (getenv("LL_DEBUG_BLOAT"))
     {
@@ -1757,13 +2030,16 @@ void LLWindowSDL::gatherInput()
 		    mKeyScanCode = event.key.keysym.scancode;
 		    mKeyVirtualKey = event.key.keysym.unicode;
 		    mKeyModifiers = event.key.keysym.mod;
-
+			mSDLSym = event.key.keysym.sym;  // <FS:ND/> Store the SDL Keysym too.
+			
 		    gKeyboard->handleKeyDown(event.key.keysym.sym, event.key.keysym.mod);
 		    // part of the fix for SL-13243
 		    if (SDLCheckGrabbyKeys(event.key.keysym.sym, TRUE) != 0)
 			    SDLReallyCaptureInput(TRUE);
 
-		    if (event.key.keysym.unicode)
+			// <FS:Zi> FIRE-11512 - Fix accelerator keys sometimes typing things into text entry fields, like alt+h, ctrl+shift+1 ...
+		    // if (event.key.keysym.unicode)
+		    if ((gKeyboard->currentMask(false) & (MASK_ALT | MASK_CONTROL)) == 0 && event.key.keysym.unicode)
 		    {
 			    handleUnicodeUTF16(event.key.keysym.unicode,
 					       gKeyboard->currentMask(FALSE));
@@ -1774,6 +2050,7 @@ void LLWindowSDL::gatherInput()
 		    mKeyScanCode = event.key.keysym.scancode;
 		    mKeyVirtualKey = event.key.keysym.unicode;
 		    mKeyModifiers = event.key.keysym.mod;
+			mSDLSym = event.key.keysym.sym;  // <FS:ND/> Store the SDL Keysym too.
 
 		    if (SDLCheckGrabbyKeys(event.key.keysym.sym, FALSE) == 0)
 			    SDLReallyCaptureInput(FALSE); // part of the fix for SL-13243
@@ -2078,7 +2355,7 @@ void LLWindowSDL::initCursors()
 	mSDLCursors[UI_CURSOR_SIZENESW] = makeSDLCursorFromBMP("sizenesw.BMP",17,17);
 	mSDLCursors[UI_CURSOR_SIZEWE] = makeSDLCursorFromBMP("sizewe.BMP",16,14);
 	mSDLCursors[UI_CURSOR_SIZENS] = makeSDLCursorFromBMP("sizens.BMP",17,16);
-    mSDLCursors[UI_CURSOR_SIZEALL] = makeSDLCursorFromBMP("sizeall.BMP", 17, 17);
+	mSDLCursors[UI_CURSOR_SIZEALL] = makeSDLCursorFromBMP("sizeall.BMP", 17, 17);
 	mSDLCursors[UI_CURSOR_NO] = makeSDLCursorFromBMP("llno.BMP",8,8);
 	mSDLCursors[UI_CURSOR_WORKING] = makeSDLCursorFromBMP("working.BMP",12,15);
 	mSDLCursors[UI_CURSOR_TOOLGRAB] = makeSDLCursorFromBMP("lltoolgrab.BMP",2,13);
@@ -2098,7 +2375,7 @@ void LLWindowSDL::initCursors()
 	mSDLCursors[UI_CURSOR_TOOLCAMERA] = makeSDLCursorFromBMP("lltoolcamera.BMP",7,5);
 	mSDLCursors[UI_CURSOR_TOOLPAN] = makeSDLCursorFromBMP("lltoolpan.BMP",7,5);
 	mSDLCursors[UI_CURSOR_TOOLZOOMIN] = makeSDLCursorFromBMP("lltoolzoomin.BMP",7,5);
-    mSDLCursors[UI_CURSOR_TOOLZOOMOUT] = makeSDLCursorFromBMP("lltoolzoomout.BMP", 7, 5);
+	mSDLCursors[UI_CURSOR_TOOLZOOMOUT] = makeSDLCursorFromBMP("lltoolzoomout.BMP", 7, 5);
 	mSDLCursors[UI_CURSOR_TOOLPICKOBJECT3] = makeSDLCursorFromBMP("toolpickobject3.BMP",0,0);
 	mSDLCursors[UI_CURSOR_TOOLPLAY] = makeSDLCursorFromBMP("toolplay.BMP",0,0);
 	mSDLCursors[UI_CURSOR_TOOLPAUSE] = makeSDLCursorFromBMP("toolpause.BMP",0,0);
@@ -2107,6 +2384,8 @@ void LLWindowSDL::initCursors()
 	mSDLCursors[UI_CURSOR_TOOLSIT] = makeSDLCursorFromBMP("toolsit.BMP",20,15);
 	mSDLCursors[UI_CURSOR_TOOLBUY] = makeSDLCursorFromBMP("toolbuy.BMP",20,15);
 	mSDLCursors[UI_CURSOR_TOOLOPEN] = makeSDLCursorFromBMP("toolopen.BMP",20,15);
+	//mSDLCursors[UI_CURSOR_TOOLPAY] = makeSDLCursorFromBMP("toolbuy.BMP",20,15);
+
 	mSDLCursors[UI_CURSOR_TOOLPATHFINDING] = makeSDLCursorFromBMP("lltoolpathfinding.BMP", 16, 16);
 	mSDLCursors[UI_CURSOR_TOOLPATHFINDING_PATH_START] = makeSDLCursorFromBMP("lltoolpathfindingpathstart.BMP", 16, 16);
 	mSDLCursors[UI_CURSOR_TOOLPATHFINDING_PATH_START_ADD] = makeSDLCursorFromBMP("lltoolpathfindingpathstartadd.BMP", 16, 16);
@@ -2352,39 +2631,6 @@ static void color_changed_callback(GtkWidget *widget,
 	gtk_color_selection_get_current_color(colorsel, colorp);
 }
 
-
-/*
-        Make the raw keyboard data available - used to poke through to LLQtWebKit so
-        that Qt/Webkit has access to the virtual keycodes etc. that it needs
-*/
-LLSD LLWindowSDL::getNativeKeyData()
-{
-        LLSD result = LLSD::emptyMap();
-
-	U32 modifiers = 0; // pretend-native modifiers... oh what a tangled web we weave!
-
-	// we go through so many levels of device abstraction that I can't really guess
-	// what a plugin under GDK under Qt under SL under SDL under X11 considers
-	// a 'native' modifier mask.  this has been sort of reverse-engineered... they *appear*
-	// to match GDK consts, but that may be co-incidence.
-	modifiers |= (mKeyModifiers & KMOD_LSHIFT) ? 0x0001 : 0;
-	modifiers |= (mKeyModifiers & KMOD_RSHIFT) ? 0x0001 : 0;// munge these into the same shift
-	modifiers |= (mKeyModifiers & KMOD_CAPS)   ? 0x0002 : 0;
-	modifiers |= (mKeyModifiers & KMOD_LCTRL)  ? 0x0004 : 0;
-	modifiers |= (mKeyModifiers & KMOD_RCTRL)  ? 0x0004 : 0;// munge these into the same ctrl
-	modifiers |= (mKeyModifiers & KMOD_LALT)   ? 0x0008 : 0;// untested
-	modifiers |= (mKeyModifiers & KMOD_RALT)   ? 0x0008 : 0;// untested
-	// *todo: test ALTs - I don't have a case for testing these.  Do you?
-	// *todo: NUM? - I don't care enough right now (and it's not a GDK modifier).
-
-        result["scan_code"] = (S32)mKeyScanCode;
-        result["virtual_key"] = (S32)mKeyVirtualKey;
-	result["modifiers"] = (S32)modifiers;
-
-        return result;
-}
-
-
 BOOL LLWindowSDL::dialogColorPicker( F32 *r, F32 *g, F32 *b)
 {
 	BOOL rtn = FALSE;
@@ -2469,6 +2715,37 @@ BOOL LLWindowSDL::dialogColorPicker( F32 *r, F32 *g, F32 *b)
 }
 #endif // LL_GTK
 
+/*
+        Make the raw keyboard data available - used to poke through to LLQtWebKit so
+        that Qt/Webkit has access to the virtual keycodes etc. that it needs
+*/
+LLSD LLWindowSDL::getNativeKeyData()
+{
+        LLSD result = LLSD::emptyMap();
+
+	U32 modifiers = 0; // pretend-native modifiers... oh what a tangled web we weave!
+
+	// we go through so many levels of device abstraction that I can't really guess
+	// what a plugin under GDK under Qt under SL under SDL under X11 considers
+	// a 'native' modifier mask.  this has been sort of reverse-engineered... they *appear*
+	// to match GDK consts, but that may be co-incidence.
+	modifiers |= (mKeyModifiers & KMOD_LSHIFT) ? 0x0001 : 0;
+	modifiers |= (mKeyModifiers & KMOD_RSHIFT) ? 0x0001 : 0;// munge these into the same shift
+	modifiers |= (mKeyModifiers & KMOD_CAPS)   ? 0x0002 : 0;
+	modifiers |= (mKeyModifiers & KMOD_LCTRL)  ? 0x0004 : 0;
+	modifiers |= (mKeyModifiers & KMOD_RCTRL)  ? 0x0004 : 0;// munge these into the same ctrl
+	modifiers |= (mKeyModifiers & KMOD_LALT)   ? 0x0008 : 0;// untested
+	modifiers |= (mKeyModifiers & KMOD_RALT)   ? 0x0008 : 0;// untested
+	// *todo: test ALTs - I don't have a case for testing these.  Do you?
+	// *todo: NUM? - I don't care enough right now (and it's not a GDK modifier).
+
+        result["scan_code"] = (S32)mKeyScanCode;
+        result["virtual_key"] = (S32)mKeyVirtualKey;
+	result["modifiers"] = (S32)modifiers;
+	result[ "sdl_sym" ] = (S32)mSDLSym;  // <FS:ND/> Store the SDL Keysym too.
+        return result;
+}
+
 #if LL_LINUX
 // extracted from spawnWebBrowser for clarity and to eliminate
 //  compiler confusion regarding close(int fd) vs. LLWindow::close()
@@ -2481,9 +2758,32 @@ void exec_cmd(const std::string& cmd, const std::string& arg)
 	{ // child
 		// disconnect from stdin/stdout/stderr, or child will
 		// keep our output pipe undesirably alive if it outlives us.
-		close(0);
-		close(1);
-		close(2);
+		// close(0);
+		// close(1);
+		// close(2);
+		// <FS:TS> Reopen stdin, stdout, and stderr to /dev/null.
+		//         It's good practice to always have those file
+		//         descriptors open to something, lest the exec'd
+		//         program actually try to use them.
+		FILE *result;
+		result = freopen("/dev/null","r",stdin);
+		if (result == NULL)
+		{
+		        LL_WARNS() << "Error reopening stdin for web browser: "
+		                << strerror(errno) << LL_ENDL;
+                }
+		result = freopen("/dev/null","w",stdout);
+		if (result == NULL)
+		{
+		        LL_WARNS() << "Error reopening stdout for web browser: "
+		                << strerror(errno) << LL_ENDL;
+                }
+		result = freopen("/dev/null","w",stderr);
+		if (result == NULL)
+		{
+		        LL_WARNS() << "Error reopening stderr for web browser: "
+		                << strerror(errno) << LL_ENDL;
+                }
 		// end ourself by running the command
 		execv(cmd.c_str(), argv);	/* Flawfinder: ignore */
 		// if execv returns at all, there was a problem.
@@ -2549,6 +2849,10 @@ void LLWindowSDL::spawnWebBrowser(const std::string& escaped_url, bool async)
 	LL_INFOS() << "spawn_web_browser returning." << LL_ENDL;
 }
 
+void LLWindowSDL::openFile(const std::string& file_name)
+{
+	spawnWebBrowser("file://"+file_name,TRUE);
+}
 
 void *LLWindowSDL::getPlatformWindow()
 {
@@ -2692,6 +2996,24 @@ std::vector<std::string> LLWindowSDL::getDynamicFallbackFontList()
 
 	rtns.push_back(final_fallback);
 	return rtns;
+}
+
+void* LLWindowSDL::createSharedContext()
+{
+  return nullptr;
+}
+
+void LLWindowSDL::makeContextCurrent(void* contextPtr)
+{
+  LL_PROFILER_GPU_CONTEXT;
+}
+
+void LLWindowSDL::destroySharedContext(void* contextPtr)
+{
+}
+
+void LLWindowSDL::toggleVSync(bool enable_vsync)
+{
 }
 
 #endif // LL_SDL

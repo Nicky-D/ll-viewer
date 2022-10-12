@@ -1,5 +1,11 @@
 # -*- cmake -*-
 # Construct the version and copyright information based on package data.
+
+if( USE_SYSROOT )
+  # When using a preinstalled tarbell is will include the packages info, we can jsut copy it.
+  file(COPY ${AUTOBUILD_INSTALL_DIR}/packages-info.txt DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
+else()
+  
 include(Python)
 include(FindAutobuild)
 
@@ -18,3 +24,5 @@ add_custom_command(OUTPUT packages-info.txt
           ${PYTHON_EXECUTABLE}
           ${CMAKE_SOURCE_DIR}/../scripts/packages-formatter.py "${VIEWER_CHANNEL}" "${VIEWER_SHORT_VERSION}.${VIEWER_VERSION_REVISION}" > packages-info.txt
   )
+
+endif()

@@ -13,7 +13,7 @@ include(BuildPackagesInfo)
 include(BuildVersion)
 include(CMakeCopyIfDifferent)
 include(CubemapToEquirectangularJS)
-include(DBusGlib)
+include(GLIB)
 include(DragDrop)
 include(EXPAT)
 include(FMODSTUDIO)
@@ -61,7 +61,9 @@ include(URIPARSER)
 
 if (NOT HAVOK_TPV)
    # When using HAVOK_TPV, the library is precompiled, so no need for this
-   add_subdirectory(${LLPHYSICSEXTENSIONS_SRC_DIR} llphysicsextensions)
+   if( EXISTS ${LLPHYSICSEXTENSIONS_SRC_DIR} )
+       add_subdirectory(${LLPHYSICSEXTENSIONS_SRC_DIR} llphysicsextensions)
+   endif()
 endif (NOT HAVOK_TPV)
 
 if(FMODSTUDIO)
@@ -69,7 +71,6 @@ if(FMODSTUDIO)
 endif(FMODSTUDIO)
 
 include_directories(
-    ${DBUSGLIB_INCLUDE_DIRS}
     ${JSONCPP_INCLUDE_DIR}
     ${LLAUDIO_INCLUDE_DIRS}
     ${LLCHARACTER_INCLUDE_DIRS}
@@ -745,9 +746,6 @@ set(viewer_SOURCE_FILES
     noise.cpp
     pipeline.cpp
     )
-
-set(VIEWER_BINARY_NAME "secondlife-bin" CACHE STRING
-    "The name of the viewer executable to create.")
 
 set(viewer_HEADER_FILES
     CMakeLists.txt
@@ -1469,7 +1467,6 @@ if (LINUX)
       PROPERTIES
       COMPILE_DEFINITIONS "${VIEWER_CHANNEL_VERSION_DEFINES}"
       )
-    LIST(APPEND viewer_SOURCE_FILES llappviewerlinux_api_dbus.cpp)
     SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--as-needed")
 
     set(viewer_LIBRARIES
@@ -1535,12 +1532,6 @@ if (WINDOWS)
         "${CMAKE_CURRENT_SOURCE_DIR}/icons/${ICON_PATH}/secondlife_256.BMP"
         "${CMAKE_CURRENT_SOURCE_DIR}/res/ll_icon.BMP"
       )
-    execute_process(
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_CURRENT_SOURCE_DIR}/icons/${ICON_PATH}/secondlife_256.BMP"
-        "${CMAKE_CURRENT_SOURCE_DIR}/res-sdl/ll_icon.BMP"
-      )
-
     # Add resource files to the project.
     # viewerRes.rc is the only buildable file, but
     # the rest are all dependencies of it.
@@ -1771,12 +1762,6 @@ add_executable(${VIEWER_BINARY_NAME}
     MACOSX_BUNDLE
     ${viewer_SOURCE_FILES}
     )
-
-if (SDL_FOUND)
-  set_property(TARGET ${VIEWER_BINARY_NAME}
-    PROPERTY COMPILE_DEFINITIONS LL_SDL=1
-    )
-endif (SDL_FOUND)
 
 if (USE_BUGSPLAT)
   set_property(TARGET ${VIEWER_BINARY_NAME}
@@ -2054,12 +2039,10 @@ target_link_libraries(${VIEWER_BINARY_NAME}
     ${BOOST_REGEX_LIBRARY}
     ${BOOST_FIBER_LIBRARY}
     ${BOOST_CONTEXT_LIBRARY}
-    ${DBUSGLIB_LIBRARIES}
     ${OPENGL_LIBRARIES}
     ${FMODWRAPPER_LIBRARY} # must come after LLAudio
     ${OPENGL_LIBRARIES}
     ${JSONCPP_LIBRARIES}
-    ${SDL_LIBRARY}
     ${SMARTHEAP_LIBRARY}
     ${UI_LIBRARIES}
     ${WINDOWS_LIBRARIES}
@@ -2072,6 +2055,7 @@ target_link_libraries(${VIEWER_BINARY_NAME}
     ${LLPHYSICSEXTENSIONS_LIBRARIES}
     ${LLAPPEARANCE_LIBRARIES}
     ${TRACY_LIBRARY}
+    ${GIO_LIBRARIES}
     )
 
 if (USE_BUGSPLAT)
@@ -2090,14 +2074,14 @@ if (LINUX)
   set(COPY_INPUT_DEPENDENCIES
     ${VIEWER_BINARY_NAME}
     SLPlugin
-    media_plugin_gstreamer010
-    media_plugin_libvlc
+    #media_plugin_gstreamer010
+    #media_plugin_libvlc
     llcommon
     )
 
-  if (NOT USE_BUGSPLAT)
-      LIST(APPEND COPY_INPUT_DEPENDENCIES linux-crash-logger)
-  endif (NOT USE_BUGSPLAT)
+  #if (NOT USE_BUGSPLAT)
+  #    LIST(APPEND COPY_INPUT_DEPENDENCIES linux-crash-logger)
+  #endif (NOT USE_BUGSPLAT)
 
   add_custom_command(
       OUTPUT ${product}.tar.bz2
@@ -2118,6 +2102,7 @@ if (LINUX)
         --source=${CMAKE_CURRENT_SOURCE_DIR}
         --touch=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/.${product}.touched
         --versionfile=${CMAKE_CURRENT_BINARY_DIR}/viewer_version.txt
+		--package_dir=${AUTOBUILD_INSTALL_DIR}
       DEPENDS
         ${CMAKE_CURRENT_SOURCE_DIR}/viewer_manifest.py
         ${COPY_INPUT_DEPENDENCIES}
@@ -2145,6 +2130,7 @@ if (LINUX)
       --grid=${GRID}
       --source=${CMAKE_CURRENT_SOURCE_DIR}
       --versionfile=${CMAKE_CURRENT_BINARY_DIR}/viewer_version.txt
+	  --package_dir=${AUTOBUILD_INSTALL_DIR}
     DEPENDS
       ${CMAKE_CURRENT_SOURCE_DIR}/viewer_manifest.py
       ${COPY_INPUT_DEPENDENCIES}

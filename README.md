@@ -1,39 +1,30 @@
-![Second Life Logo](doc/sl-logo.png)
+## This is just a collection of patches and changes I collected over the years to make the second life viewer compile under Linux. It might be useful to some people, but comes with no support. If you find issues feel free to correct them and submit a pull request.
 
-**[Second Life][] is a free 3D virtual world where users can create, connect and chat with others from around the
-world.** This repository contains the source code for the official client.
 
-## Open Source
 
-Second Life provides a huge variety of tools for expression, content creation, socialization and play. Its vibrancy is
-only possible because of input and contributions from its residents. The client codebase has been open source since
-2007 and is available under the LGPL license. The [Open Source Portal][] contains additional information about Linden
-Lab's open source history and projects.
+### Required system packages
 
-## Download
+- build-essentials
+- python3-setuptools
+- python3-pip
+- mesa-common-dev
+- libgl1-mesa-dev
+- libxinerama-dev
+- libxrandr-dev
+- libpulse-dev
+- libglu1-mesa-dev
 
-Most people use a pre-built viewer release to access Second Life. Windows and macOS builds are
-[published on the official website][download]. More experimental viewers, such as release candidates and
-project viewers, are detailed on the [Alternate Viewers page](https://releasenotes.secondlife.com/viewer.html).
+### Required pip packages
 
-### Third Party Viewers
+- cmake (usually newer than the system version)
+- ninja
 
-Third party maintained forks, which include Linux compatible builds, are indexed in the [Third Party Viewer Directory][tpv].
+It is suggested to install them to your user directory, eg pip install --user cmake. But then usually you will need to add the directory (often .local/bin) to your PATH
 
-## Build Instructions
+### To build the viewer
 
-[Windows](https://wiki.secondlife.com/wiki/Build_the_Viewer_on_Windows)
+- cd into the "indra" directory
+- run "cmake --preset LinuxRelease"
+- run "cmake --build --preset LinuxRelease"
 
-[Mac](https://wiki.secondlife.com/wiki/Build_the_Viewer_on_macOS)
-
-[Linux](https://wiki.secondlife.com/wiki/Build_the_Viewer_on_Linux)
-
-## Contribute
-
-Help make Second Life better! You can get involved with improvements by filing bugs, suggesting enhancements, submitting
-pull requests and more. See the [open source portal][] for details.
-
-[Second Life]: https://secondlife.com/
-[download]: https://secondlife.com/support/downloads/
-[tpv]: http://wiki.secondlife.com/wiki/Third_Party_Viewer_Directory
-[open source portal]: http://wiki.secondlife.com/wiki/Open_Source_Portal
+If all went all the resulting binary is in <source_dir>/build-linux-64/newview/packaged

@@ -95,6 +95,8 @@ public:
 	// Family is "AMD Duron" or "Intel Pentium Pro"
 	const std::string& getFamily() const { return mFamily; }
 
+    float getLoadAvg() const;
+    uint32_t getNumCPUs() const;
 private:
 	bool mHasSSE;
 	bool mHasSSE2;
@@ -108,6 +110,8 @@ private:
 	std::string mFamily;
 	std::string mCPUString;
     LLSD mSSEVersions;
+    uint32_t mCPUs = 0;
+
 };
 
 //=============================================================================

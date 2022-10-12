@@ -190,7 +190,7 @@ elseif(LINUX)
     set(SHARED_LIB_STAGING_DIR_RELWITHDEBINFO   "${SHARED_LIB_STAGING_DIR}")
     set(SHARED_LIB_STAGING_DIR_RELEASE          "${SHARED_LIB_STAGING_DIR}")
 
-    set(vivox_lib_dir "${ARCH_PREBUILT_DIRS_RELEASE}")
+    set(vivox_lib_dir "${AUTOBUILD_INSTALL_DIR}/lib32/")
     set(vivox_libs
         libsndfile.so.1
         libortp.so
@@ -211,20 +211,19 @@ elseif(LINUX)
     set(release_files
         libapr-1.so.0
         libaprutil-1.so.0
-        libatk-1.0.so
-        libdb-5.1.so
+        #libatk-1.0.so
+        #libdb-5.1.so
         ${EXPAT_COPY}
-        libfreetype.so.6.6.2
-        libfreetype.so.6
-        libgmodule-2.0.so
-        libgobject-2.0.so
+        #libfreetype.so.6.6.2
+        #libfreetype.so.6
+        #libgmodule-2.0.so
+        #libgobject-2.0.so
         libhunspell-1.3.so.0.0.0
-        libopenal.so
-        libopenjpeg.so
-        libuuid.so.16
-        libuuid.so.16.0.22
-        libfontconfig.so.1.8.0
-        libfontconfig.so.1
+        #libopenal.so
+        #libuuid.so.16
+        #libuuid.so.16.0.22
+        #libfontconfig.so.1.8.0
+        #libfontconfig.so.1
        )
 
     if (FMODSTUDIO)

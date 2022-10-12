@@ -50,29 +50,21 @@ else (USESYSTEMLIBS)
         debug libboost_thread-mt${addrsfx}-gd)
   elseif (LINUX)
     set(BOOST_CONTEXT_LIBRARY
-        optimized boost_context-mt${addrsfx}
-        debug boost_context-mt${addrsfx}-d)
+        libboost_context-mt${addrsfx}.a )
     set(BOOST_FIBER_LIBRARY
-        optimized boost_fiber-mt${addrsfx}
-        debug boost_fiber-mt${addrsfx}-d)
+        libboost_fiber-mt${addrsfx}.a )
     set(BOOST_FILESYSTEM_LIBRARY
-        optimized boost_filesystem-mt${addrsfx}
-        debug boost_filesystem-mt${addrsfx}-d)
+        libboost_filesystem-mt${addrsfx}.a )
     set(BOOST_PROGRAM_OPTIONS_LIBRARY
-        optimized boost_program_options-mt${addrsfx}
-        debug boost_program_options-mt${addrsfx}-d)
+        libboost_program_options-mt${addrsfx}.a )
     set(BOOST_REGEX_LIBRARY
-        optimized boost_regex-mt${addrsfx}
-        debug boost_regex-mt${addrsfx}-d)
+        libboost_regex-mt${addrsfx}.a )
     set(BOOST_SIGNALS_LIBRARY
-        optimized boost_signals-mt${addrsfx}
-        debug boost_signals-mt${addrsfx}-d)
+        libboost_signals-mt${addrsfx}.a )
     set(BOOST_SYSTEM_LIBRARY
-        optimized boost_system-mt${addrsfx}
-        debug boost_system-mt${addrsfx}-d)
+        libboost_system-mt${addrsfx}.a )
     set(BOOST_THREAD_LIBRARY
-        optimized boost_thread-mt${addrsfx}
-        debug boost_thread-mt${addrsfx}-d)
+        libboost_thread-mt${addrsfx}.a )
   elseif (DARWIN)
     set(BOOST_CONTEXT_LIBRARY
         optimized boost_context-mt${addrsfx}

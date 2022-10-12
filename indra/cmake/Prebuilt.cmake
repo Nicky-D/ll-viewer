@@ -1,7 +1,9 @@
 # -*- cmake -*-
 
-if(NOT DEFINED ${CMAKE_CURRENT_LIST_FILE}_INCLUDED)
-set(${CMAKE_CURRENT_LIST_FILE}_INCLUDED "YES")
+include( SysRoot )
+if( USE_SYSROOT )
+  return()
+endif()
 
 include(FindAutobuild)
 if(INSTALL_PROPRIETARY)
@@ -60,5 +62,3 @@ macro (use_prebuilt_binary _binary)
     endif (NOT ${_binary}_installed EQUAL 0)
   endif (NOT USESYSTEMLIBS_${_binary})
 endmacro (use_prebuilt_binary _binary)
-
-endif(NOT DEFINED ${CMAKE_CURRENT_LIST_FILE}_INCLUDED)

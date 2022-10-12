@@ -2,6 +2,7 @@
 include(Prebuilt)
 include(Linking)
 
+if( LL_TESTS )
 use_prebuilt_binary(googlemock)
 
 set(GOOGLEMOCK_INCLUDE_DIRS
@@ -26,3 +27,4 @@ elseif(DARWIN)
 endif(LINUX)
 
 
+endif()

@@ -13,7 +13,7 @@
     endif (DARWIN)
 
     if (LINUX)
-      add_definitions(-DLL_OS_DRAGDROP_ENABLED=0)
+      add_definitions(-DLL_OS_DRAGDROP_ENABLED=1)
     endif (LINUX)
 
   endif (OS_DRAG_DROP)

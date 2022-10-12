@@ -26,10 +26,11 @@ elseif (HAVOK_TPV)
    set(LLPHYSICSEXTENSIONS_LIBRARIES    llphysicsextensions_tpv)
 
 else (HAVOK)
-   use_prebuilt_binary(llphysicsextensions_stub)
-   set(LLPHYSICSEXTENSIONS_SRC_DIR ${LIBS_PREBUILT_DIR}/llphysicsextensions/stub)
-   set(LLPHYSICSEXTENSIONS_LIBRARIES    llphysicsextensionsstub)
+   #use_prebuilt_binary(llphysicsextensions_stub)
+   #set(LLPHYSICSEXTENSIONS_SRC_DIR ${LIBS_PREBUILT_DIR}/llphysicsextensions/stub)
+   #set(LLPHYSICSEXTENSIONS_LIBRARIES    llphysicsextensionsstub)
 
+   set(LLPHYSICSEXTENSIONS_LIBRARIES nd_hacdConvexDecomposition hacd nd_Pathing )
 endif (HAVOK)
 
 set(LLPHYSICSEXTENSIONS_INCLUDE_DIRS ${LIBS_PREBUILT_DIR}/include/llphysicsextensions)

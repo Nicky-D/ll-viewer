@@ -607,6 +607,8 @@ LLCPUInfo::LLCPUInfo()
 	mFamily = proc.getCPUFamilyName();
 	mCPUString = "Unknown";
 
+    mCPUs = proc.getCPUs();
+
 	out << proc.getCPUBrandName();
 	if (200 < mCPUMHz && mCPUMHz < 10000)           // *NOTE: cpu speed is often way wrong, do a sanity check
 	{
@@ -717,6 +719,23 @@ void LLCPUInfo::stream(std::ostream& s) const
 	s << "->mHasAltivec: " << (U32)mHasAltivec << std::endl;
 	s << "->mCPUMHz:     " << mCPUMHz << std::endl;
 	s << "->mCPUString:  " << mCPUString << std::endl;
+}
+
+float LLCPUInfo::getLoadAvg() const
+{
+#if LL_LINUX
+    std::ifstream in("/proc/loadavg", std::ios::in);
+    float avg1;
+    in >> avg1;
+    return avg1 / mCPUs;
+#else
+    return 0;
+#endif
+}
+
+uint32_t LLCPUInfo::getNumCPUs() const
+{
+    return mCPUs;
 }
 
 // Helper class for LLMemoryInfo: accumulate stats in the form we store for

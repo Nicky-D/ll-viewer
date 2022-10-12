@@ -1,0 +1,113 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 21,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "ReleaseBase",
+      "displayName": "ReleaseBase",
+      "hidden": true,
+      "environment": {
+        "AUTOBUILD_LOGLEVEL": "--verbose",
+        "AUTOBUILD_ADDRSIZE": "64"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": {
+          "type": "STRING",
+          "value": "Release"
+        },
+        "INSTALL_PROPRIETARY": {
+          "type": "BOOL",
+          "value": "False"
+        },
+        "ADDRESS_SIZE": {
+          "type": "STRING",
+          "value": "64"
+        },
+        "ROOT_PROJECT_NAME": {
+          "type": "STRING",
+          "value": "SecondLife"
+        },
+        "LL_TESTS": {
+          "type": "BOOL",
+          "value": "OFF"
+        },
+        "USE_JASPER": {
+          "type": "BOOL",
+          "value": "On"
+        }
+      }
+    },
+    {
+	  "name": "LinuxBase",
+	  "displayName": "LinuxBase",
+	  "generator": "Ninja",
+      "binaryDir": "${sourceDir}/../build-linux-64/",
+      "hidden": true,
+      "inherits": "ReleaseBase",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "environment": {
+        "ND_ARCH_FLAGS": "",
+        "LL_BUILD_DEFINES": "-DLL_RELEASE=1 -DLL_RELEASE_FOR_DOWNLOAD=1 -DLL_LINUX=1 -D_GLIBCXX_USE_CXX11_ABI=1 -DLL_OS_DRAGDROP_ENABLED=1",
+		 "LL_BUILD_WARNINGS": "-Wno-stringop-overflow -Wno-nonnull -Wno-pessimizing-move -Wno-maybe-uninitialized -Wno-unknown-warning-option -Wno-string-plus-int -Wno-tautological-overlap-compare -Wno-implicit-const-int-float-conversion -Wno-return-type -Wno-range-loop-construct -Wno-unused-private-field -Wno-unused-local-typedefs -Wno-deprecated -Wno-unused-but-set-variable -Wno-unused-variable -Wno-placement-new -Wno-parentheses -Wno-misleading-indentation -Wno-catch-value -Wno-class-memaccess -Wno-stringop-truncation -Wno-pragmas -Wno-deprecated -Wno-unused-but-set-variable -Wno-unused-variable -Wno-deprecated-declarations",
+        "LL_BUILD_BASE": "-fPIC $env{LL_BUILD_WARNINGS}  $env{ND_ARCH_FLAGS} $env{LL_BUILD_DEFINES}"
+      },
+      "cacheVariables": {
+        "USE_SDL2": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "USE_SYSROOT": {
+          "type": "BOOL",
+          "value": "ON"
+        }
+	  }
+    },
+    {
+      "name": "LinuxRelease",
+      "displayName": "LinuxRelease",
+      "inherits": "LinuxBase",
+      "environment": {
+          "LL_BUILD": "-O3 -ggdb $env{LL_BUILD_BASE}"
+      }
+    },
+    {
+      "name": "LinuxReleaseNoDebug",
+      "displayName": "LinuxReleaseNoDebug",
+      "inherits": "LinuxBase",
+      "environment": {
+          "LL_BUILD": "-O3 $env{LL_BUILD_BASE}"
+      }
+    },
+    {
+      "name": "LinuxDebug",
+      "displayName": "LinuxReleaseNoDebug",
+      "binaryDir": "${sourceDir}/../build-linux-debug-64/",
+      "inherits": "LinuxBase",
+      "environment": {
+          "LL_BUILD": "-O0 -ggdb $env{LL_BUILD_BASE}"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "LinuxRelease",
+      "configurePreset": "LinuxRelease"
+    },
+    {
+      "name": "LinuxReleaseNoDebug",
+      "configurePreset": "LinuxReleaseNoDebug"
+    },
+    {
+      "name": "LinuxDebug",
+      "configurePreset": "LinuxDebug"
+    }
+  ]
+}

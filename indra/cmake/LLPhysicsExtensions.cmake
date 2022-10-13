@@ -30,7 +30,7 @@ else (HAVOK)
    #set(LLPHYSICSEXTENSIONS_SRC_DIR ${LIBS_PREBUILT_DIR}/llphysicsextensions/stub)
    #set(LLPHYSICSEXTENSIONS_LIBRARIES    llphysicsextensionsstub)
 
-   set(LLPHYSICSEXTENSIONS_LIBRARIES nd_hacdConvexDecomposition hacd nd_Pathing )
+   set(LLPHYSICSEXTENSIONS_LIBRARIES ndMeshDecomposing ndNavmesh )
 endif (HAVOK)
 
 set(LLPHYSICSEXTENSIONS_INCLUDE_DIRS ${LIBS_PREBUILT_DIR}/include/llphysicsextensions)

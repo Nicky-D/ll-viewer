@@ -18,6 +18,15 @@ if( USE_SYSROOT )
   endif()
   FetchContent_MakeAvailable( ${SYSROOT_NAME} )
 
+  FetchContent_Declare( ndMeshDecomposition 
+    GIT_REPOSITORY git@github.com:Nicky-D/ndMeshDecomposing.git
+    GIT_TAG v1.0)
+  FetchContent_Declare( ndNavMesh
+    GIT_REPOSITORY git@github.com:Nicky-D/ndNavMesh.git
+    GIT_TAG v1.0)
+  FetchContent_MakeAvailable( ndMeshDecomposition ndNavMesh )
+  
+  
   function (use_prebuilt_binary _binary)
   endfunction()
 endif()

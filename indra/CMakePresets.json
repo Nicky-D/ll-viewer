@@ -56,7 +56,7 @@
       "environment": {
         "ND_ARCH_FLAGS": "",
         "LL_BUILD_DEFINES": "-DLL_RELEASE=1 -DLL_RELEASE_FOR_DOWNLOAD=1 -DLL_LINUX=1 -D_GLIBCXX_USE_CXX11_ABI=1 -DLL_OS_DRAGDROP_ENABLED=1",
-		 "LL_BUILD_WARNINGS": "-Wno-stringop-overflow -Wno-nonnull -Wno-pessimizing-move -Wno-maybe-uninitialized -Wno-unknown-warning-option -Wno-string-plus-int -Wno-tautological-overlap-compare -Wno-implicit-const-int-float-conversion -Wno-return-type -Wno-range-loop-construct -Wno-unused-private-field -Wno-unused-local-typedefs -Wno-deprecated -Wno-unused-but-set-variable -Wno-unused-variable -Wno-placement-new -Wno-parentheses -Wno-misleading-indentation -Wno-catch-value -Wno-class-memaccess -Wno-stringop-truncation -Wno-pragmas -Wno-deprecated -Wno-unused-but-set-variable -Wno-unused-variable -Wno-deprecated-declarations",
+		 "LL_BUILD_WARNINGS": "-Wno-stringop-overflow -Wno-nonnull -Wno-pessimizing-move -Wno-maybe-uninitialized -Wno-unknown-warning-option -Wno-string-plus-int -Wno-tautological-overlap-compare -Wno-implicit-const-int-float-conversion -Wno-return-type -Wno-range-loop-construct -Wno-unused-private-field -Wno-unused-local-typedefs -Wno-deprecated -Wno-unused-but-set-variable -Wno-unused-variable -Wno-placement-new -Wno-parentheses -Wno-misleading-indentation -Wno-catch-value -Wno-class-memaccess -Wno-stringop-truncation -Wno-pragmas -Wno-deprecated -Wno-unused-but-set-variable -Wno-unused-variable -Wno-deprecated-declarations -Wno-comment",
         "LL_BUILD_BASE": "-fPIC $env{LL_BUILD_WARNINGS}  $env{ND_ARCH_FLAGS} $env{LL_BUILD_DEFINES}"
       },
       "cacheVariables": {

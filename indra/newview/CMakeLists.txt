@@ -1560,7 +1560,6 @@ if (WINDOWS)
         res/lltooltranslate.cur
         res/lltoolzoomin.cur
         res/lltoolzoomout.cur
-        res-sdl/ll_icon.BMP
         res/ll_icon.BMP
         res/ll_icon.ico
         res/resource.h

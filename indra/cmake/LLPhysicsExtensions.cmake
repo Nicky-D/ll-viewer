@@ -26,7 +26,7 @@ elseif (HAVOK_TPV)
    set(LLPHYSICSEXTENSIONS_LIBRARIES    llphysicsextensions_tpv)
 
 else (HAVOK)
-   if( LL_LINUX )
+   if( LINUX )
      set(LLPHYSICSEXTENSIONS_LIBRARIES nd_hacdConvexDecomposition hacd nd_Pathing )
    else()
      use_prebuilt_binary(llphysicsextensions_stub)

@@ -75,7 +75,7 @@
       "displayName": "LinuxRelease",
       "inherits": "LinuxBase",
       "environment": {
-          "LL_BUILD": "-O3 -fuse-ld=gold -Wl,--gdb-index -g3 -gdwarf -gsplit-dwarf $env{LL_BUILD_BASE}"
+          "LL_BUILD": "-O3 -ggdb $env{LL_BUILD_BASE}"
       }
     },
     {
@@ -92,7 +92,7 @@
       "binaryDir": "${sourceDir}/../build-linux-debug-64/",
       "inherits": "LinuxBase",
       "environment": {
-          "LL_BUILD": "-O0 -fuse-ld=gold -Wl,--gdb-index -g3 -gdwarf -gsplit-dwarf  $env{LL_BUILD_BASE}"
+          "LL_BUILD": "-O0 -ggdb $env{LL_BUILD_BASE}"
       }
     }
   ],

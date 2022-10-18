@@ -76,8 +76,8 @@ if (LINUX)
       ${LLXML_LIBRARIES}
       ${UI_LIBRARIES}     # for GTK
       sdl
-      libfontconfig.a          # For FCInit and other FC* functions.
-      libfreetype.a
+      Fontconfig::Fontconfig 
+      Freetype::Freetype
       libuuid.a
       )
 

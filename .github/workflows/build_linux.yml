@@ -1,5 +1,16 @@
 name: Build viewer
-on: [push,workflow_dispatch]
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - v*.*.*
+    paths:
+      - 'indra/**'
+      - '.github/**'
+
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-20.04
@@ -44,3 +55,10 @@ jobs:
         with:
           name: ${{ runner.os }}-${{runner.addrsize}}-artifacts.zip
           path: build-linux-*/newview/*.tar.*
+
+      - name: create release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: build-linux-*/newview/*.tar.*
+

@@ -194,5 +194,12 @@ if( LINUX )
   target_include_directories( llwindow PUBLIC ${SDL_SOURCE_DIR} )
 endif()
 
-target_link_libraries (llwindow ${llwindow_LINK_LIBRARIES})
+  target_link_libraries (llwindow ${llwindow_LINK_LIBRARIES})
+  
+if (DARWIN)
+  include(CMakeFindFrameworks)
+  find_library(CARBON_LIBRARY Carbon)
+  target_link_libraries(llwindow ${CARBON_LIBRARY})
+endif (DARWIN)
+
 

@@ -1164,21 +1164,25 @@ bool LLAppViewer::init()
         // ForceAddressSize
         updater.args.add(stringize(gSavedSettings.getU32("ForceAddressSize")));
 
-        try
+        if( LLFile::isfile( updater.executable  ))
         {
-            // Run the updater. An exception from launching the updater should bother us.
-            LLLeap::create(updater, true);
-            mUpdaterNotFound = false;
+            try
+            {
+                // Run the updater. An exception from launching the updater should bother us.
+                LLLeap::create(updater, true);
+                mUpdaterNotFound = false;
+            }
+            catch(...)
+            {
+                LLUIString details = LLNotifications::instance().getGlobalString("LLLeapUpdaterFailure");
+                details.setArg("[UPDATER_APP]", updater_file);
+                OSMessageBox(details.getString(), LLStringUtil::null, OSMB_OK);
+                mUpdaterNotFound = true;
+            }
         }
-        catch (...)
+        else
         {
-            LLUIString details = LLNotifications::instance().getGlobalString("LLLeapUpdaterFailure");
-            details.setArg("[UPDATER_APP]", updater_file);
-            OSMessageBox(
-                details.getString(),
-                LLStringUtil::null,
-                OSMB_OK);
-            mUpdaterNotFound = true;
+            mUpdaterNotFound = false;
         }
     }
     else

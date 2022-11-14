@@ -26,11 +26,17 @@ elseif (HAVOK_TPV)
    set(LLPHYSICSEXTENSIONS_LIBRARIES    llphysicsextensions_tpv)
 
 else (HAVOK)
-   #use_prebuilt_binary(llphysicsextensions_stub)
-   #set(LLPHYSICSEXTENSIONS_SRC_DIR ${LIBS_PREBUILT_DIR}/llphysicsextensions/stub)
-   #set(LLPHYSICSEXTENSIONS_LIBRARIES    llphysicsextensionsstub)
 
-   set(LLPHYSICSEXTENSIONS_LIBRARIES nd_hacdConvexDecomposition hacd nd_Pathing )
+  FetchContent_Declare( ndMeshDecomposition 
+    GIT_REPOSITORY https://github.com/Nicky-D/ndMeshDecomposing.git
+    GIT_TAG v1.0)
+  FetchContent_Declare( ndNavMesh
+    GIT_REPOSITORY https://github.com/Nicky-D/ndNavMesh.git
+    GIT_TAG v1.0)
+  FetchContent_MakeAvailable( ndMeshDecomposition ndNavMesh )
+
+  set(LLPHYSICSEXTENSIONS_LIBRARIES ndMeshDecomposing ndNavmesh )
+
 endif (HAVOK)
 
 set(LLPHYSICSEXTENSIONS_INCLUDE_DIRS ${LIBS_PREBUILT_DIR}/include/llphysicsextensions)

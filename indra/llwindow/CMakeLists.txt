@@ -76,8 +76,8 @@ if (LINUX)
       ${LLXML_LIBRARIES}
       ${UI_LIBRARIES}     # for GTK
       sdl
-      libfontconfig.a          # For FCInit and other FC* functions.
-      libfreetype.a
+      Fontconfig::Fontconfig 
+      Freetype::Freetype
       libuuid.a
       )
 
@@ -194,7 +194,7 @@ if( LINUX )
   target_include_directories( llwindow PUBLIC ${SDL_SOURCE_DIR} )
 endif()
 
-target_link_libraries (llwindow ${llwindow_LINK_LIBRARIES})
+  target_link_libraries (llwindow ${llwindow_LINK_LIBRARIES})
   
 if (DARWIN)
   include(CMakeFindFrameworks)

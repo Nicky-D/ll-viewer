@@ -130,8 +130,8 @@
 #include "stringize.h"
 #include "llcoros.h"
 #include "llexception.h"
-#if !LL_LINUX
 #include "cef/dullahan_version.h"
+#if !LL_LINUX
 #include "vlc/libvlc_version.h"
 #endif // LL_LINUX
 
@@ -1164,22 +1164,24 @@ bool LLAppViewer::init()
         // ForceAddressSize
         updater.args.add(stringize(gSavedSettings.getU32("ForceAddressSize")));
 
-        try
+        if( LLFile::isfile( updater.executable  ))
         {
-            // Run the updater. An exception from launching the updater should bother us.
-            LLLeap::create(updater, true);
-            mUpdaterNotFound = false;
+            try
+            {
+                // Run the updater. An exception from launching the updater should bother us.
+                LLLeap::create(updater, true);
+                mUpdaterNotFound = false;
+            }
+            catch(...)
+            {
+                LLUIString details = LLNotifications::instance().getGlobalString("LLLeapUpdaterFailure");
+                details.setArg("[UPDATER_APP]", updater_file);
+                OSMessageBox(details.getString(), LLStringUtil::null, OSMB_OK);
+                mUpdaterNotFound = true;
         }
-        catch (...)
+        else
         {
-            LLUIString details = LLNotifications::instance().getGlobalString("LLLeapUpdaterFailure");
-            details.setArg("[UPDATER_APP]", updater_file);
-            OSMessageBox(
-                details.getString(),
-                LLStringUtil::null,
-                OSMB_OK);
-            mUpdaterNotFound = true;
-            LL_WARNS("InitInfo") << "Failed to launch updater." << LL_ENDL;
+            mUpdaterNotFound = false;
         }
     }
     else
@@ -3329,7 +3331,6 @@ LLSD LLAppViewer::getViewerInfo() const
 		info["VOICE_VERSION"] = LLTrans::getString("NotConnected");
 	}
 
-#if !LL_LINUX
 	std::ostringstream cef_ver_codec;
 	cef_ver_codec << "Dullahan: ";
 	cef_ver_codec << DULLAHAN_VERSION_MAJOR;
@@ -3355,9 +3356,6 @@ LLSD LLAppViewer::getViewerInfo() const
 	cef_ver_codec << CHROME_VERSION_PATCH;
 
 	info["LIBCEF_VERSION"] = cef_ver_codec.str();
-#else
-	info["LIBCEF_VERSION"] = "Undefined";
-#endif
 
 #if !LL_LINUX
 	std::ostringstream vlc_ver_codec;

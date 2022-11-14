@@ -71,28 +71,19 @@
 	  }
     },
     {
-      "name": "LinuxRelease",
-      "displayName": "LinuxRelease",
-      "inherits": "LinuxBase",
-      "environment": {
-          "LL_BUILD": "-O3 -ggdb $env{LL_BUILD_BASE}"
-      }
-    },
-    {
-      "name": "LinuxReleaseNoDebug",
-      "displayName": "LinuxReleaseNoDebug",
+      "name": "LinuxReleaseOld",
+      "displayName": "LinuxReleaseOld",
       "inherits": "LinuxBase",
       "environment": {
           "LL_BUILD": "-O3 $env{LL_BUILD_BASE}"
       }
     },
     {
-      "name": "LinuxDebug",
-      "displayName": "LinuxReleaseNoDebug",
-      "binaryDir": "${sourceDir}/../build-linux-debug-64/",
+      "name": "LinuxRelease",
+      "displayName": "LinuxRelease",
       "inherits": "LinuxBase",
       "environment": {
-          "LL_BUILD": "-O0 -ggdb $env{LL_BUILD_BASE}"
+        "LL_BUILD": "-O3 -fuse-ld=gold -Wl,--gdb-index -gz -g3 -gdwarf-4 -gsplit-dwarf  $env{LL_BUILD_BASE}"
       }
     }
   ],
@@ -102,12 +93,8 @@
       "configurePreset": "LinuxRelease"
     },
     {
-      "name": "LinuxReleaseNoDebug",
-      "configurePreset": "LinuxReleaseNoDebug"
-    },
-    {
-      "name": "LinuxDebug",
-      "configurePreset": "LinuxDebug"
+      "name": "LinuxReleaseOld",
+      "configurePreset": "LinuxReleaseOld"
     }
   ]
 }

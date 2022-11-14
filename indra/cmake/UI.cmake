@@ -2,6 +2,7 @@
 include(Prebuilt)
 include(FreeType)
 include(GLIB)
+include(ViewerMiscLibs)
 
 if (USESYSTEMLIBS)
   include(FindPkgConfig)
@@ -40,7 +41,6 @@ else (USESYSTEMLIBS)
   if (LINUX)
     set(UI_LIB_NAMES
         libfltk.a
-        libfreetype.a
         )
 
     foreach(libname ${UI_LIB_NAMES})
@@ -52,8 +52,8 @@ else (USESYSTEMLIBS)
         )
       set(UI_LIBRARIES ${UI_LIBRARIES} ${UI_LIB_${libname}})
     endforeach(libname)
-    set(UI_LIBRARIES ${UI_LIBRARIES} Xinerama X11)
-	include_directories ( ${GLIB_INCLUDE_DIRS}  )
+    set(UI_LIBRARIES Freetype::Freetype ${UI_LIBRARIES} Xinerama X11)
+    include_directories ( ${GLIB_INCLUDE_DIRS}  )
   endif (LINUX)
 
   include_directories (

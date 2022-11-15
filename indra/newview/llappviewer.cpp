@@ -1178,7 +1178,8 @@ bool LLAppViewer::init()
                 details.setArg("[UPDATER_APP]", updater_file);
                 OSMessageBox(details.getString(), LLStringUtil::null, OSMB_OK);
                 mUpdaterNotFound = true;
-        }
+			}
+		}
         else
         {
             mUpdaterNotFound = false;
